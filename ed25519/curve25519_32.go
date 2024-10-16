@@ -1,7 +1,7 @@
 package ed25519
 
 import (
-	"fmt"
+	"encoding/binary"
 )
 
 type fiat25519Uint1 uint8
@@ -157,15 +157,16 @@ func fiat25519CarryMul(out1 fiat25519TightFieldElement, arg1 fiat25519LooseField
 	x102 := x100 >> 26
 	x103 = uint32(x100 & 0x3ffffff)
 
-	x104 := x[91] + (x[82] + (x[74] + (x[67] + (x[61] + (x[56] + (x[52] + (x[49] + (x[47] + x[46]))))))
-	x105 := x[92] + (x[83] + (x[75] + (x[68] + (x[62] + (x[57] + (x[53] + (x[50] + (x[48] + x[1])))))))
-	x106 := x[93] + (x[84] + (x[76] + (x[69] + (x[63] + (x[58] + (x[54] + (x[51] + (x[10] + x[2])))))))
-	x107 := x[94] + (x[85] + (x[77] + (x[70] + (x[64] + (x[59] + (x[55] + (x[18] + (x[11] + x[3])))))))
-	x108 := x[95] + (x[86] + (x[78] + (x[71] + (x[65] + (x[60] + (x[25] + (x[19] + (x[12] + x[4])))))))
-	x109 := x[96] + (x[87] + (x[79] + (x[72] + (x[66] + (x[31] + (x[26] + (x[20] + (x[13] + x[5])))))))
-	x110 := x[97] + (x[88] + (x[80] + (x[73] + (x[36] + (x[32] + (x[27] + (x[21] + (x[14] + x[6])))))))
-	x111 := x[98] + (x[89] + (x[81] + (x[40] + (x[37] + (x[33] + (x[28] + (x[22] + (x[15] + x[7])))))))
-	x112 := x[99] + (x[90] + (x[43] + (x[41] + (x[38] + (x[34] + (x[29] + (x[23] + (x[16] + x[8])))))))
+	x104 := x[91] + (x[82] + (x[74] + (x[67] + (x[61] + (x[56] + (x[52] + (x[49] + (x[47] + x[46]))))))))
+
+	x105 := x[92] + (x[83] + (x[75] + (x[68] + (x[62] + (x[57] + (x[53] + (x[50] + (x[48] + x[1]))))))))
+	x106 := x[93] + (x[84] + (x[76] + (x[69] + (x[63] + (x[58] + (x[54] + (x[51] + (x[10] + x[2]))))))))
+	x107 := x[94] + (x[85] + (x[77] + (x[70] + (x[64] + (x[59] + (x[55] + (x[18] + (x[11] + x[3]))))))))
+	x108 := x[95] + (x[86] + (x[78] + (x[71] + (x[65] + (x[60] + (x[25] + (x[19] + (x[12] + x[4]))))))))
+	x109 := x[96] + (x[87] + (x[79] + (x[72] + (x[66] + (x[31] + (x[26] + (x[20] + (x[13] + x[5]))))))))
+	x110 := x[97] + (x[88] + (x[80] + (x[73] + (x[36] + (x[32] + (x[27] + (x[21] + (x[14] + x[6]))))))))
+	x111 := x[98] + (x[89] + (x[81] + (x[40] + (x[37] + (x[33] + (x[28] + (x[22] + (x[15] + x[7]))))))))
+	x112 := x[99] + (x[90] + (x[43] + (x[41] + (x[38] + (x[34] + (x[29] + (x[23] + (x[16] + x[8]))))))))
 
 	x113 := x102 + x112
 	x114 := x113 >> 25
@@ -224,14 +225,6 @@ func fiat25519CarryMul(out1 fiat25519TightFieldElement, arg1 fiat25519LooseField
 	out1[8] = x136
 	out1[9] = x139
 }
-
-package main
-
-import "math/bits"
-
-type fiat25519TightFieldElement [10]uint32
-type fiat25519LooseFieldElement [10]uint32
-type fiat25519Uint1 uint32
 
 func fiat25519CarrySquare(out1 *fiat25519TightFieldElement, arg1 *fiat25519LooseFieldElement) {
 	var x [120]uint64
@@ -315,11 +308,11 @@ func fiat25519CarrySquare(out1 *fiat25519TightFieldElement, arg1 *fiat25519Loose
 	x[78] = (x[65] + (x[57] + (x[50] + (x[44] + (x[39] + x[19])))))
 	x[79] = (x[66] + (x[58] + (x[51] + (x[45] + (x[20] + x[21])))))
 	x[80] = (x[67] + (x[59] + (x[52] + (x[46] + (x[22] + x[21])))))
-	x[81] = (x[68] + (x[60] + (x[53] + (x[25] + x[23])))))
+	x[81] = (x[68] + (x[60] + (x[53] + (x[25] + x[23]))))
 	x[82] = (x[69] + (x[61] + (x[54] + (x[29] + (x[26] + x[24])))))
-	x[83] = (x[70] + (x[62] + (x[34] + (x[30] + x[27])))))
+	x[83] = (x[70] + (x[62] + (x[34] + (x[30] + x[27]))))
 	x[84] = (x[71] + (x[63] + (x[40] + (x[35] + (x[31] + x[28])))))
-	x[85] = (x[72] + (x[47] + (x[41] + (x[36] + x[32])))))
+	x[85] = (x[72] + (x[47] + (x[41] + (x[36] + x[32]))))
 	x[86] = (x[76] + x[85])
 	x[87] = (x[86] >> 25)
 	x[88] = uint32(x[86] & 0x1ffffff)
@@ -380,10 +373,10 @@ func fiat25519Carry(out1 *fiat25519TightFieldElement, arg1 *fiat25519LooseFieldE
 	x[9] = (x[8] >> 25) + arg1[8]
 	x[10] = (x[9] >> 26) + arg1[9]
 	x[11] = (x[1] & 0x3ffffff) + ((x[10] >> 25) * 0x13)
-	x[12] = (fiat25519Uint1(x[11] >> 26) + (x[2] & 0x1ffffff))
+	x[12] = (fiat25519Uint1(x[11]>>26) + (x[2] & 0x1ffffff))
 	x[13] = (x[11] & 0x3ffffff)
 	x[14] = (x[12] & 0x1ffffff)
-	x[15] = (fiat25519Uint1(x[12] >> 25) + (x[3] & 0x3ffffff))
+	x[15] = (fiat25519Uint1(x[12]>>25) + (x[3] & 0x3ffffff))
 	x[16] = (x[4] & 0x1ffffff)
 	x[17] = (x[5] & 0x3ffffff)
 	x[18] = (x[6] & 0x1ffffff)
@@ -402,18 +395,6 @@ func fiat25519Carry(out1 *fiat25519TightFieldElement, arg1 *fiat25519LooseFieldE
 	out1[8] = x[21]
 	out1[9] = x[22]
 }
-
-
-
-package main
-
-import (
-	"encoding/binary"
-)
-
-type fiat25519LooseFieldElement [10]uint32
-type fiat25519TightFieldElement [10]uint32
-type fiat25519Uint1 uint8
 
 func fiat25519Add(out1 *fiat25519LooseFieldElement, arg1, arg2 *fiat25519TightFieldElement) {
 	for i := 0; i < 10; i++ {
@@ -475,13 +456,6 @@ func fiat25519ToBytes(out1 *[32]byte, arg1 *fiat25519TightFieldElement) {
 		binary.LittleEndian.PutUint32(out1[i*4:], x[i])
 	}
 }
-
-package main
-
-import "math/bits"
-
-type fiat25519TightFieldElement [10]uint32
-type fiat25519LooseFieldElement [10]uint32
 
 func fiat25519FromBytes(out1 *fiat25519TightFieldElement, arg1 [32]uint8) {
 	var x [78]uint32
@@ -637,4 +611,3 @@ func fiat25519CarryScmul121666(out1 *fiat25519TightFieldElement, arg1 *fiat25519
 	out1[8] = x[36]
 	out1[9] = x[39]
 }
-

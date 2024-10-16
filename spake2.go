@@ -855,13 +855,13 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []uint8, maxOutLen uint32, passwor
 		return 0, err
 	}
 
-	x25519_sc_reduce(privateTmp[:])
+	x25519ScReduce(privateTmp[:])
 	leftShift3(&privateTmp)
 
 	copy(ctx.privateKey[:], privateTmp[:])
 
-	var P geP3
-	x25519_ge_scalarmult_base(&P, ctx.privateKey[:])
+	var P ed25519.Ge_p3
+	x25519GeScalarmultBase(&P, ctx.privateKey[:])
 
 	passwordTmp := [64]uint8{}
 	sha := sha512Ctx{}
@@ -894,18 +894,18 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []uint8, maxOutLen uint32, passwor
 
 	copy(ctx.passwordScalar[:], passwordScalar.bytes[:])
 
-	var mask geP3
-	x25519_ge_scalarmult_small_precomp(&mask, ctx.passwordScalar[:], ctx.myRole)
+	var mask ed25519.Ge_p3
+	x25519GeScalarmultSmallPrecomp(&mask, ctx.passwordScalar[:], ctx.myRole)
 
-	var maskCached geCached
-	x25519_ge_p3_to_cached(&maskCached, &mask)
+	var maskCached ed25519.Ge_cached
+	ed25519.X25519_ge_p3_to_cached(&maskCached, &mask)
 
-	var Pstar geP1P1
-	x25519_ge_add(&Pstar, &P, &maskCached)
+	var Pstar ed25519.Ge_p1p1
+	ed25519.X25519_ge_add(&Pstar, &P, &maskCached)
 
-	var PstarProj geP2
-	x25519_ge_p1p1_to_p2(&PstarProj, &Pstar)
-	x25519_ge_tobytes(ctx.myMsg[:], &PstarProj)
+	var PstarProj ed25519.Ge_p2
+	ed25519.X25519_ge_p1p1_to_p2(&PstarProj, &Pstar)
+	ed25519.X25519_ge_tobytes(ctx.myMsg[:], &PstarProj)
 
 	copy(out, ctx.myMsg[:])
 	ctx.state = 1 // Assuming 1 is spake2_state_msg_generated
@@ -925,28 +925,28 @@ func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, th
 		return 0, errors.New("invalid state or message length")
 	}
 
-	var Qstar geP3
-	if !x25519_ge_frombytes_vartime(&Qstar, theirMsg) {
+	var Qstar ed25519.Ge_p3
+	if ed25519.X25519_ge_frombytes_vartime(&Qstar, theirMsg) == 0 {
 		return 0, errors.New("point received from peer was not on the curve")
 	}
 
-	var peersMask geP3
-	x25519_ge_scalarmult_small_precomp(&peersMask, ctx.passwordScalar[:], ctx.myRole)
+	var peersMask ed25519.Ge_p3
+	x25519GeScalarmultSmallPrecomp(&peersMask, ctx.passwordScalar[:], ctx.myRole)
 
-	var peersMaskCached geCached
-	x25519_ge_p3_to_cached(&peersMaskCached, &peersMask)
+	var peersMaskCached ed25519.Ge_cached
+	ed25519.X25519_ge_p3_to_cached(&peersMaskCached, &peersMask)
 
-	var QCompl geP1P1
-	var QExt geP3
-	x25519_ge_sub(&QCompl, &Qstar, &peersMaskCached)
-	x25519_ge_p1p1_to_p3(&QExt, &QCompl)
+	var QCompl ed25519.Ge_p1p1
+	var QExt ed25519.Ge_p3
 
-	var dhShared geP2
-	x25519_ge_scalarmult(&dhShared, ctx.privateKey[:], &QExt)
+	ed25519.X25519_ge_sub(&QCompl, &Qstar, &peersMaskCached)
+	ed25519.X25519_ge_p1p1_to_p3(&QExt, &QCompl)
+
+	var dhShared ed25519.Ge_p2
+	x25519GeScalarmult(&dhShared, ctx.privateKey[:], &QExt)
 
 	dhSharedEncoded := [32]uint8{}
-	x25519_ge_tobytes(dhSharedEncoded[:], &dhShared)
-
+	ed25519.X25519_ge_tobytes(dhSharedEncoded[:], &dhShared)
 	sha := sha512Ctx{}
 	sha512_init_ctx(&sha)
 	if ctx.myRole == 0 { // Assuming 0 is spake2_role_alice
