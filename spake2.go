@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"spake2-go/ed25519"
+	"spake2-go/sha512"
+
 	"unsafe"
 )
 
@@ -864,12 +866,12 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []uint8, maxOutLen uint32, passwor
 	x25519GeScalarmultBase(&P, ctx.privateKey[:])
 
 	passwordTmp := [64]uint8{}
-	sha := sha512Ctx{}
-	sha512_init_ctx(&sha)
-	sha512_process_bytes(password, len(password), &sha)
-	sha512_finish_ctx(&sha, passwordTmp[:])
+	sha := sha512.Sha512Ctx{}
+	sha512.Sha512InitCtx(&sha)
+	sha512.Sha512ProcessBytes(password, len(password), &sha)
+	sha512.Sha512FinishCtx(&sha, passwordTmp[:])
 	copy(ctx.passwordHash[:], passwordTmp[:])
-	x25519_sc_reduce(passwordTmp[:])
+	x25519ScReduce(passwordTmp[:])
 
 	var passwordScalar scalar
 	copy(passwordScalar.bytes[:], passwordTmp[:])
@@ -913,11 +915,11 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []uint8, maxOutLen uint32, passwor
 	return uint32(len(ctx.myMsg)), nil
 }
 
-func updateWithLengthPrefix(sha *sha512Ctx, data []uint8, length uint32) {
+func updateWithLengthPrefix(sha *sha512.Sha512Ctx, data []uint8, length uint32) {
 	lenLE := make([]uint8, 8)
 	binary.LittleEndian.PutUint64(lenLE, uint64(length))
-	sha512_process_bytes(lenLE, len(lenLE), sha)
-	sha512_process_bytes(data, int(length), sha)
+	sha512.Sha512ProcessBytes(lenLE, len(lenLE), sha)
+	sha512.Sha512ProcessBytes(data, int(length), sha)
 }
 
 func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, theirMsg []uint8) (uint32, error) {
@@ -947,8 +949,8 @@ func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, th
 
 	dhSharedEncoded := [32]uint8{}
 	ed25519.X25519_ge_tobytes(dhSharedEncoded[:], &dhShared)
-	sha := sha512Ctx{}
-	sha512_init_ctx(&sha)
+	sha := sha512.Sha512Ctx{}
+	sha512.Sha512InitCtx(&sha)
 	if ctx.myRole == 0 { // Assuming 0 is spake2_role_alice
 		updateWithLengthPrefix(&sha, ctx.myName, ctx.myNameLen)
 		updateWithLengthPrefix(&sha, ctx.theirName, ctx.theirNameLen)
@@ -964,7 +966,7 @@ func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, th
 	updateWithLengthPrefix(&sha, ctx.passwordHash[:], uint32(len(ctx.passwordHash)))
 
 	key := [64]uint8{}
-	sha512_finish_ctx(&sha, key[:])
+	sha512.Sha512FinishCtx(&sha, key[:])
 
 	toCopy := maxOutKeyLen
 	if toCopy > uint32(len(key)) {

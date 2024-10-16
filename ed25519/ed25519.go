@@ -222,7 +222,7 @@ func fe_isnonzero(f *Fe_loose) bool {
 	var tight Fe
 	Fe_carry(&tight, f)
 	s := make([]byte, 32)
-	Fe_tobytes(s, &tight)
+	Fe_tobytes(&s, &tight)
 	zero := make([]byte, 32)
 	return !bytes.Equal(s, zero)
 }
