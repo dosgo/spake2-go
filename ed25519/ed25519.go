@@ -2,6 +2,7 @@ package ed25519
 
 import (
 	"bytes"
+	"fmt"
 )
 
 const FE_NUM_LIMBS = 10
@@ -93,35 +94,39 @@ func Fe_carry(h *Fe, f *Fe_loose) {
 	fiat25519Carry(&h.v, &f.v)
 }
 
-func Fe_mul_impl(out Fiat25519FieldElement, in1 *Fiat25519FieldElement, in2 *Fiat25519FieldElement) Fiat25519FieldElement {
+func Fe_mul_impl(out Fiat25519FieldElement, in1 Fiat25519FieldElement, in2 Fiat25519FieldElement) Fiat25519FieldElement {
 
-	return fiat25519CarryMul(out, *in1, *in2)
+	return fiat25519CarryMul(out, in1, in2)
 
 }
 
 func Fe_mul_ltt(h *Fe_loose, f *Fe, g *Fe) {
-	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
+
+	h.v = Fe_mul_impl(h.v, f.v, g.v)
+	if f.v[0] == 15573506 {
+		fmt.Printf("h.v888888888888888:%+v\r\n", h.v)
+	}
 }
 
 func Fe_mul_llt(h *Fe_loose, f *Fe_loose, g *Fe) {
-	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, f.v, g.v)
 }
 
 func Fe_mul_ttt(h *Fe, f *Fe, g *Fe) {
 
-	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, f.v, g.v)
 }
 
 func Fe_mul_tlt(h *Fe, f *Fe_loose, g *Fe) {
-	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, f.v, g.v)
 }
 
 func fe_mul_ttl(h *Fe, f *Fe, g *Fe_loose) {
-	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, f.v, g.v)
 }
 
 func fe_mul_tll(h *Fe, f *Fe_loose, g *Fe_loose) {
-	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, f.v, g.v)
 }
 
 func fe_sq_tl(h *Fe, f *Fe_loose) {

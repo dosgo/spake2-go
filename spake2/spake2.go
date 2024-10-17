@@ -159,11 +159,14 @@ func x25519GeScalarmultSmallPrecomp(
 
 		ed25519.Fe_add(&multiples[i].Yplusx, &y, &x)
 		ed25519.Fe_sub(&multiples[i].Yminusx, &y, &x)
-		ed25519.Fe_mul_ltt(&multiples[i].Xy2d, &x, &y)
-		ed25519.Fe_mul_llt(&multiples[i].Xy2d, &multiples[i].Xy2d, &ed25519.D2)
-	}
 
-	log.Printf("multiples[i].Xy2d:%+v\r\n", multiples[1].Xy2d)
+		ed25519.Fe_mul_ltt(&multiples[i].Xy2d, &x, &y)
+		if i == 1 {
+			log.Printf("multiples[i].Xy2d:%+v x:%+v,y:%+v\r\n", multiples[i].Xy2d, x, y)
+		}
+		ed25519.Fe_mul_llt(&multiples[i].Xy2d, &multiples[i].Xy2d, &ed25519.D2)
+
+	}
 
 	// See the comment above |k25519SmallPrecomp| about the structure of the
 	// precomputed elements. This loop does 64 additions and 64 doublings to

@@ -27,10 +27,21 @@ func fiat25519AddCarryXU25(out1 *uint32, out2 *fiat25519Uint1, arg1 fiat25519Uin
 	*out2 = fiat25519Uint1(x1 >> 25)
 }
 
-func fiat25519SubBorrowXU25(out1 *uint32, out2 *fiat25519Uint1, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
+func fiat25519SubBorrowXU25Bak(out1 *uint32, out2 *fiat25519Uint1, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
 	x1 := int32(arg2) - int32(arg1) - int32(arg3)
 	*out1 = uint32(x1 & 0x1ffffff)
 	*out2 = fiat25519Uint1(0 - (x1 >> 25))
+}
+
+func fiat25519SubBorrowXU25(out1 *uint32, out2 *fiat25519Uint1, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
+	var x1 int32
+	var x2 fiat25519Int1
+	var x3 uint32
+	x1 = (int32(arg2-uint32(arg1)) - int32(arg3))
+	x2 = (fiat25519Int1)(x1 >> 25)
+	x3 = uint32(uint32(x1) & uint32(0x1ffffff))
+	*out1 = x3
+	*out2 = (fiat25519Uint1)(0x0 - x2)
 }
 
 func fiat25519CmovznzU32(out1 *uint32, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
@@ -42,311 +53,316 @@ func fiat25519CmovznzU32(out1 *uint32, arg1 fiat25519Uint1, arg2 uint32, arg3 ui
 	*out1 = (fiat25519ValueBarrierU32(x2) & arg3) | (fiat25519ValueBarrierU32(^x2) & arg2)
 }
 
-func fiat25519CarryMulBak(out1 Fiat25519FieldElement, arg1 Fiat25519FieldElement, arg2 Fiat25519FieldElement) Fiat25519FieldElement {
-	var x1 uint64;
-	var x2 uint64;
-	var x3 uint64;
-	var x4 uint64;
-	var x5 uint64;
-	var x6 uint64;
-	var x7 uint64;
-	var x8 uint64;
-	var  x9 uint64;
-	var  x10 uint64;
-	var  x11 uint64;
-	var  x12 uint64;
-	var  x13 uint64;
-	var  x14 uint64;
-	var  x15 uint64;
-	var  x16 uint64;
-	var  x17 uint64;
-	var  x19 uint64;
-	var  x20 uint64;
-	var  x21 uint64; 
-	var  x22 uint64;
-	var  x23 uint64;
-	var  x24 uint64; 
-	var  x25 uint64;
-	var  x26 uint64;
-	var  x27 uint64;
-	var  x28 uint64;
-	var  x29 uint64; 
-	var  x30 uint64;
-	var  x31 uint64;
-	var  x32 uint64;
-	var  x33 uint64;
-	var  x34 uint64;
-	var  x35 uint64;
-	var  x36;
-	var  x37;
-	var  x38;
-	var  x39;
-	var  x40;
-	var  x41;
-	var  x42;
-	var  x43;
-	var  x44;
-	var  x45;
-	var  x46;
-	var  x47;
-	var  x48;
-	var  x49;
-	var  x50;
-	var  x51;
-	var  x52;
-	var  x53;
-	var  x54;
-	var  x55;
-	var  x56;
-	var  x57;
-	var  x58;
-	var  x59;
-	var  x60;
-	var  x61;
-	var  x62;
-	var  x63;
-	var  x64;
-	var  x65;
-	var  x66;
-	var  x67;
-	var  x68;
-	var  x69;
-	var  x70;
-	var  x71;
-	var  x72;
-	var  x73;
-	var  x74;
-	var  x75;
-	var  x76;
-	var  x77;
-	var  x78;
-	var  x79;
-	var  x80;
-	var  x81;
-	var  x82;
-	var  x83 uint64 ;
-	var  x84 uint64 ;
-	var  x85 uint64;
-	var  x86 uint64 ;
-	var  x87 uint64;
-	var  x88 uint64;
-	var  x89 uint64
-	var  x90 uint64;
-	var  x91 uint64;
-	var  x92 uint64; 
-	var  x93 uint64
-	var  x94 uint64;
-	var  x95 uint64;
-	var  x96 uint64;
-	var  x97 uint64;
-	var  x98 uint64
-	var  x99 uint64;
-	uint64_t x100;
-	uint64_t x101;
-	uint64_t x102;
-	uint32_t x103;
-	uint64_t x104;
-	uint64_t x105;
-	uint64_t x106;
-	uint64_t x107;
-	uint64_t x108;
-	uint64_t x109;
-	uint64_t x110;
-	uint64_t x111;
-	uint64_t x112;
-	uint64_t x113;
-	uint64_t x114;
-	uint32_t x115;
-	uint64_t x116;
-	uint64_t x117;
-	uint32_t x118;
-	uint64_t x119;
-	uint64_t x120;
-	uint32_t x121;
-	uint64_t x122;
-	uint64_t x123;
-	uint32_t x124;
-	uint64_t x125;
-	uint64_t x126;
-	uint32_t x127;
-	uint64_t x128;
-	uint64_t x129;
-	uint32_t x130;
-	uint64_t x131;
-	uint64_t x132;
-	uint32_t x133;
-	uint64_t x134;
-	uint64_t x135;
-	uint32_t x136;
-	uint64_t x137;
-	uint64_t x138;
-	uint32_t x139;
-	uint64_t x140;
-	uint64_t x141;
-	uint32_t x142;
-	uint32_t x143;
-	uint32_t x144;
-	var fiat_25519_uint1 x145;
-	var	uint32_t x146;
-	var uint32_t x147;
-	x1 = ((uint64_t)(arg1[9]) * ((arg2[9]) * UINT8_C(0x26)));
-	x2 = ((uint64_t)(arg1[9]) * ((arg2[8]) * UINT8_C(0x13)));
-	x3 = ((uint64_t)(arg1[9]) * ((arg2[7]) * UINT8_C(0x26)));
-	x4 = ((uint64_t)(arg1[9]) * ((arg2[6]) * UINT8_C(0x13)));
-	x5 = ((uint64_t)(arg1[9]) * ((arg2[5]) * UINT8_C(0x26)));
-	x6 = ((uint64_t)(arg1[9]) * ((arg2[4]) * UINT8_C(0x13)));
-	x7 = ((uint64_t)(arg1[9]) * ((arg2[3]) * UINT8_C(0x26)));
-	x8 = ((uint64_t)(arg1[9]) * ((arg2[2]) * UINT8_C(0x13)));
-	x9 = ((uint64_t)(arg1[9]) * ((arg2[1]) * UINT8_C(0x26)));
-	x10 = ((uint64_t)(arg1[8]) * ((arg2[9]) * UINT8_C(0x13)));
-	x11 = ((uint64_t)(arg1[8]) * ((arg2[8]) * UINT8_C(0x13)));
-	x12 = ((uint64_t)(arg1[8]) * ((arg2[7]) * UINT8_C(0x13)));
-	x13 = ((uint64_t)(arg1[8]) * ((arg2[6]) * UINT8_C(0x13)));
-	x14 = ((uint64_t)(arg1[8]) * ((arg2[5]) * UINT8_C(0x13)));
-	x15 = ((uint64_t)(arg1[8]) * ((arg2[4]) * UINT8_C(0x13)));
-	x16 = ((uint64_t)(arg1[8]) * ((arg2[3]) * UINT8_C(0x13)));
-	x17 = ((uint64_t)(arg1[8]) * ((arg2[2]) * UINT8_C(0x13)));
-	x18 = ((uint64_t)(arg1[7]) * ((arg2[9]) * UINT8_C(0x26)));
-	x19 = ((uint64_t)(arg1[7]) * ((arg2[8]) * UINT8_C(0x13)));
-	x20 = ((uint64_t)(arg1[7]) * ((arg2[7]) * UINT8_C(0x26)));
-	x21 = ((uint64_t)(arg1[7]) * ((arg2[6]) * UINT8_C(0x13)));
-	x22 = ((uint64_t)(arg1[7]) * ((arg2[5]) * UINT8_C(0x26)));
-	x23 = ((uint64_t)(arg1[7]) * ((arg2[4]) * UINT8_C(0x13)));
-	x24 = ((uint64_t)(arg1[7]) * ((arg2[3]) * UINT8_C(0x26)));
-	x25 = ((uint64_t)(arg1[6]) * ((arg2[9]) * UINT8_C(0x13)));
-	x26 = ((uint64_t)(arg1[6]) * ((arg2[8]) * UINT8_C(0x13)));
-	x27 = ((uint64_t)(arg1[6]) * ((arg2[7]) * UINT8_C(0x13)));
-	x28 = ((uint64_t)(arg1[6]) * ((arg2[6]) * UINT8_C(0x13)));
-	x29 = ((uint64_t)(arg1[6]) * ((arg2[5]) * UINT8_C(0x13)));
-	x30 = ((uint64_t)(arg1[6]) * ((arg2[4]) * UINT8_C(0x13)));
-	x31 = ((uint64_t)(arg1[5]) * ((arg2[9]) * UINT8_C(0x26)));
-	x32 = ((uint64_t)(arg1[5]) * ((arg2[8]) * UINT8_C(0x13)));
-	x33 = ((uint64_t)(arg1[5]) * ((arg2[7]) * UINT8_C(0x26)));
-	x34 = ((uint64_t)(arg1[5]) * ((arg2[6]) * UINT8_C(0x13)));
-	x35 = ((uint64_t)(arg1[5]) * ((arg2[5]) * UINT8_C(0x26)));
-	x36 = ((uint64_t)(arg1[4]) * ((arg2[9]) * UINT8_C(0x13)));
-	x37 = ((uint64_t)(arg1[4]) * ((arg2[8]) * UINT8_C(0x13)));
-	x38 = ((uint64_t)(arg1[4]) * ((arg2[7]) * UINT8_C(0x13)));
-	x39 = ((uint64_t)(arg1[4]) * ((arg2[6]) * UINT8_C(0x13)));
-	x40 = ((uint64_t)(arg1[3]) * ((arg2[9]) * UINT8_C(0x26)));
-	x41 = ((uint64_t)(arg1[3]) * ((arg2[8]) * UINT8_C(0x13)));
-	x42 = ((uint64_t)(arg1[3]) * ((arg2[7]) * UINT8_C(0x26)));
-	x43 = ((uint64_t)(arg1[2]) * ((arg2[9]) * UINT8_C(0x13)));
-	x44 = ((uint64_t)(arg1[2]) * ((arg2[8]) * UINT8_C(0x13)));
-	x45 = ((uint64_t)(arg1[1]) * ((arg2[9]) * UINT8_C(0x26)));
-	x46 = ((uint64_t)(arg1[9]) * (arg2[0]));
-	x47 = ((uint64_t)(arg1[8]) * (arg2[1]));
-	x48 = ((uint64_t)(arg1[8]) * (arg2[0]));
-	x49 = ((uint64_t)(arg1[7]) * (arg2[2]));
-	x50 = ((uint64_t)(arg1[7]) * ((arg2[1]) * 0x2));
-	x51 = ((uint64_t)(arg1[7]) * (arg2[0]));
-	x52 = ((uint64_t)(arg1[6]) * (arg2[3]));
-	x53 = ((uint64_t)(arg1[6]) * (arg2[2]));
-	x54 = ((uint64_t)(arg1[6]) * (arg2[1]));
-	x55 = ((uint64_t)(arg1[6]) * (arg2[0]));
-	x56 = ((uint64_t)(arg1[5]) * (arg2[4]));
-	x57 = ((uint64_t)(arg1[5]) * ((arg2[3]) * 0x2));
-	x58 = ((uint64_t)(arg1[5]) * (arg2[2]));
-	x59 = ((uint64_t)(arg1[5]) * ((arg2[1]) * 0x2));
-	x60 = ((uint64_t)(arg1[5]) * (arg2[0]));
-	x61 = ((uint64_t)(arg1[4]) * (arg2[5]));
-	x62 = ((uint64_t)(arg1[4]) * (arg2[4]));
-	x63 = ((uint64_t)(arg1[4]) * (arg2[3]));
-	x64 = ((uint64_t)(arg1[4]) * (arg2[2]));
-	x65 = ((uint64_t)(arg1[4]) * (arg2[1]));
-	x66 = ((uint64_t)(arg1[4]) * (arg2[0]));
-	x67 = ((uint64_t)(arg1[3]) * (arg2[6]));
-	x68 = ((uint64_t)(arg1[3]) * ((arg2[5]) * 0x2));
-	x69 = ((uint64_t)(arg1[3]) * (arg2[4]));
-	x70 = ((uint64_t)(arg1[3]) * ((arg2[3]) * 0x2));
-	x71 = ((uint64_t)(arg1[3]) * (arg2[2]));
-	x72 = ((uint64_t)(arg1[3]) * ((arg2[1]) * 0x2));
-	x73 = ((uint64_t)(arg1[3]) * (arg2[0]));
-	x74 = ((uint64_t)(arg1[2]) * (arg2[7]));
-	x75 = ((uint64_t)(arg1[2]) * (arg2[6]));
-	x76 = ((uint64_t)(arg1[2]) * (arg2[5]));
-	x77 = ((uint64_t)(arg1[2]) * (arg2[4]));
-	x78 = ((uint64_t)(arg1[2]) * (arg2[3]));
-	x79 = ((uint64_t)(arg1[2]) * (arg2[2]));
-	x80 = ((uint64_t)(arg1[2]) * (arg2[1]));
-	x81 = ((uint64_t)(arg1[2]) * (arg2[0]));
-	x82 = ((uint64_t)(arg1[1]) * (arg2[8]));
-	x83 = ((uint64_t)(arg1[1]) * ((arg2[7]) * 0x2));
-	x84 = ((uint64_t)(arg1[1]) * (arg2[6]));
-	x85 = ((uint64_t)(arg1[1]) * ((arg2[5]) * 0x2));
-	x86 = ((uint64_t)(arg1[1]) * (arg2[4]));
-	x87 = ((uint64_t)(arg1[1]) * ((arg2[3]) * 0x2));
-	x88 = ((uint64_t)(arg1[1]) * (arg2[2]));
-	x89 = ((uint64_t)(arg1[1]) * ((arg2[1]) * 0x2));
-	x90 = ((uint64_t)(arg1[1]) * (arg2[0]));
-	x91 = ((uint64_t)(arg1[0]) * (arg2[9]));
-	x92 = ((uint64_t)(arg1[0]) * (arg2[8]));
-	x93 = ((uint64_t)(arg1[0]) * (arg2[7]));
-	x94 = ((uint64_t)(arg1[0]) * (arg2[6]));
-	x95 = ((uint64_t)(arg1[0]) * (arg2[5]));
-	x96 = ((uint64_t)(arg1[0]) * (arg2[4]));
-	x97 = ((uint64_t)(arg1[0]) * (arg2[3]));
-	x98 = ((uint64_t)(arg1[0]) * (arg2[2]));
-	x99 = ((uint64_t)(arg1[0]) * (arg2[1]));
-	x100 = ((uint64_t)(arg1[0]) * (arg2[0]));
-	x101 = (x100 + (x45 + (x44 + (x42 + (x39 + (x35 + (x30 + (x24 + (x17 + x9)))))))));
-	x102 = (x101 >> 26);
-	x103 = (uint32_t)(x101 & UINT32_C(0x3ffffff));
-	x104 = (x91 + (x82 + (x74 + (x67 + (x61 + (x56 + (x52 + (x49 + (x47 + x46)))))))));
-	x105 = (x92 + (x83 + (x75 + (x68 + (x62 + (x57 + (x53 + (x50 + (x48 + x1)))))))));
-	x106 = (x93 + (x84 + (x76 + (x69 + (x63 + (x58 + (x54 + (x51 + (x10 + x2)))))))));
-	x107 = (x94 + (x85 + (x77 + (x70 + (x64 + (x59 + (x55 + (x18 + (x11 + x3)))))))));
-	x108 = (x95 + (x86 + (x78 + (x71 + (x65 + (x60 + (x25 + (x19 + (x12 + x4)))))))));
-	x109 = (x96 + (x87 + (x79 + (x72 + (x66 + (x31 + (x26 + (x20 + (x13 + x5)))))))));
-	x110 = (x97 + (x88 + (x80 + (x73 + (x36 + (x32 + (x27 + (x21 + (x14 + x6)))))))));
-	x111 = (x98 + (x89 + (x81 + (x40 + (x37 + (x33 + (x28 + (x22 + (x15 + x7)))))))));
-	x112 = (x99 + (x90 + (x43 + (x41 + (x38 + (x34 + (x29 + (x23 + (x16 + x8)))))))));
-	x113 = (x102 + x112);
-	x114 = (x113 >> 25);
-	x115 = (uint32_t)(x113 & UINT32_C(0x1ffffff));
-	x116 = (x114 + x111);
-	x117 = (x116 >> 26);
-	x118 = (uint32_t)(x116 & UINT32_C(0x3ffffff));
-	x119 = (x117 + x110);
-	x120 = (x119 >> 25);
-	x121 = (uint32_t)(x119 & UINT32_C(0x1ffffff));
-	x122 = (x120 + x109);
-	x123 = (x122 >> 26);
-	x124 = (uint32_t)(x122 & UINT32_C(0x3ffffff));
-	x125 = (x123 + x108);
-	x126 = (x125 >> 25);
-	x127 = (uint32_t)(x125 & UINT32_C(0x1ffffff));
-	x128 = (x126 + x107);
-	x129 = (x128 >> 26);
-	x130 = (uint32_t)(x128 & UINT32_C(0x3ffffff));
-	x131 = (x129 + x106);
-	x132 = (x131 >> 25);
-	x133 = (uint32_t)(x131 & UINT32_C(0x1ffffff));
-	x134 = (x132 + x105);
-	x135 = (x134 >> 26);
-	x136 = (uint32_t)(x134 & UINT32_C(0x3ffffff));
-	x137 = (x135 + x104);
-	x138 = (x137 >> 25);
-	x139 = (uint32_t)(x137 & UINT32_C(0x1ffffff));
-	x140 = (x138 * UINT8_C(0x13));
-	x141 = (x103 + x140);
-	x142 = (uint32_t)(x141 >> 26);
-	x143 = (uint32_t)(x141 & UINT32_C(0x3ffffff));
-	x144 = (x142 + x115);
-	x145 = (fiat_25519_uint1)(x144 >> 25);
-	x146 = (x144 & UINT32_C(0x1ffffff));
-	x147 = (x145 + x118);
-	out1[0] = x143;
-	out1[1] = x146;
-	out1[2] = x147;
-	out1[3] = x121;
-	out1[4] = x124;
-	out1[5] = x127;
-	out1[6] = x130;
-	out1[7] = x133;
-	out1[8] = x136;
-	out1[9] = x139;
-  }
+func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1 Fiat25519FieldElement, arg2 Fiat25519FieldElement) Fiat25519FieldElement {
+	var x1 uint64
+	var x2 uint64
+	var x3 uint64
+	var x4 uint64
+	var x5 uint64
+	var x6 uint64
+	var x7 uint64
+	var x8 uint64
+	var x9 uint64
+	var x10 uint64
+	var x11 uint64
+	var x12 uint64
+	var x13 uint64
+	var x14 uint64
+	var x15 uint64
+	var x16 uint64
+	var x17 uint64
+	var x18 uint64
+	var x19 uint64
+	var x20 uint64
+	var x21 uint64
+	var x22 uint64
+	var x23 uint64
+	var x24 uint64
+	var x25 uint64
+	var x26 uint64
+	var x27 uint64
+	var x28 uint64
+	var x29 uint64
+	var x30 uint64
+	var x31 uint64
+	var x32 uint64
+	var x33 uint64
+	var x34 uint64
+	var x35 uint64
+	var x36 uint64
+	var x37 uint64
+	var x38 uint64
+	var x39 uint64
+	var x40 uint64
+	var x41 uint64
+	var x42 uint64
+	var x43 uint64
+	var x44 uint64
+	var x45 uint64
+	var x46 uint64
+	var x47 uint64
+	var x48 uint64
+	var x49 uint64
+	var x50 uint64
+	var x51 uint64
+	var x52 uint64
+	var x53 uint64
+	var x54 uint64
+	var x55 uint64
+	var x56 uint64
+	var x57 uint64
+	var x58 uint64
+	var x59 uint64
+	var x60 uint64
+	var x61 uint64
+	var x62 uint64
+	var x63 uint64
+	var x64 uint64
+	var x65 uint64
+	var x66 uint64
+	var x67 uint64
+	var x68 uint64
+	var x69 uint64
+	var x70 uint64
+	var x71 uint64
+	var x72 uint64
+	var x73 uint64
+	var x74 uint64
+	var x75 uint64
+	var x76 uint64
+	var x77 uint64
+	var x78 uint64
+	var x79 uint64
+	var x80 uint64
+	var x81 uint64
+	var x82 uint64
+	var x83 uint64
+	var x84 uint64
+	var x85 uint64
+	var x86 uint64
+	var x87 uint64
+	var x88 uint64
+	var x89 uint64
+	var x90 uint64
+	var x91 uint64
+	var x92 uint64
+	var x93 uint64
+	var x94 uint64
+	var x95 uint64
+	var x96 uint64
+	var x97 uint64
+	var x98 uint64
+	var x99 uint64
+	var x100 uint64
+	var x101 uint64
+	var x102 uint64
+	var x103 uint32
+	var x104 uint64
+	var x105 uint64
+	var x106 uint64
+	var x107 uint64
+	var x108 uint64
+	var x109 uint64
+	var x110 uint64
+	var x111 uint64
+	var x112 uint64
+	var x113 uint64
+	var x114 uint64
+	var x115 uint32
+	var x116 uint64
+	var x117 uint64
+	var x118 uint32
+	var x119 uint64
+	var x120 uint64
+	var x121 uint32
+	var x122 uint64
+	var x123 uint64
+	var x124 uint32
+	var x125 uint64
+	var x126 uint64
+	var x127 uint32
+	var x128 uint64
+	var x129 uint64
+	var x130 uint32
+	var x131 uint64
+	var x132 uint64
+	var x133 uint32
+	var x134 uint64
+	var x135 uint64
+	var x136 uint32
+	var x137 uint64
+	var x138 uint64
+	var x139 uint32
+	var x140 uint64
+	var x141 uint64
+	var x142 uint32
+	var x143 uint32
+	var x144 uint32
+	var x145 fiat25519Uint1
+	var x146 uint32
+	var x147 uint32
+	x1 = uint64((arg1[9]) * ((arg2[9]) * (0x26)))
+	x2 = uint64((arg1[9]) * ((arg2[8]) * (0x13)))
+	x3 = uint64((arg1[9]) * ((arg2[7]) * (0x26)))
+	x4 = uint64((arg1[9]) * ((arg2[6]) * (0x13)))
+	x5 = uint64((arg1[9]) * ((arg2[5]) * (0x26)))
+	x6 = uint64((arg1[9]) * ((arg2[4]) * (0x13)))
+	x7 = uint64((arg1[9]) * ((arg2[3]) * (0x26)))
+	x8 = uint64((arg1[9]) * ((arg2[2]) * (0x13)))
+	x9 = uint64((arg1[9]) * ((arg2[1]) * (0x26)))
+	x10 = uint64((arg1[8]) * ((arg2[9]) * (0x13)))
+	x11 = uint64((arg1[8]) * ((arg2[8]) * (0x13)))
+	x12 = uint64((arg1[8]) * ((arg2[7]) * (0x13)))
+	x13 = uint64((arg1[8]) * ((arg2[6]) * (0x13)))
+	x14 = uint64((arg1[8]) * ((arg2[5]) * (0x13)))
+	x15 = uint64((arg1[8]) * ((arg2[4]) * (0x13)))
+	x16 = uint64((arg1[8]) * ((arg2[3]) * (0x13)))
+	x17 = uint64((arg1[8]) * ((arg2[2]) * (0x13)))
+	x18 = uint64((arg1[7]) * ((arg2[9]) * (0x26)))
+	x19 = uint64((arg1[7]) * ((arg2[8]) * (0x13)))
+	x20 = uint64((arg1[7]) * ((arg2[7]) * (0x26)))
+	x21 = uint64((arg1[7]) * ((arg2[6]) * (0x13)))
+	x22 = uint64((arg1[7]) * ((arg2[5]) * (0x26)))
+	x23 = uint64((arg1[7]) * ((arg2[4]) * (0x13)))
+	x24 = uint64((arg1[7]) * ((arg2[3]) * (0x26)))
+	x25 = uint64((arg1[6]) * ((arg2[9]) * (0x13)))
+	x26 = uint64((arg1[6]) * ((arg2[8]) * (0x13)))
+	x27 = uint64((arg1[6]) * ((arg2[7]) * (0x13)))
+	x28 = uint64((arg1[6]) * ((arg2[6]) * (0x13)))
+	x29 = uint64((arg1[6]) * ((arg2[5]) * (0x13)))
+	x30 = uint64((arg1[6]) * ((arg2[4]) * (0x13)))
+	x31 = uint64((arg1[5]) * ((arg2[9]) * (0x26)))
+	x32 = uint64((arg1[5]) * ((arg2[8]) * (0x13)))
+	x33 = uint64((arg1[5]) * ((arg2[7]) * (0x26)))
+	x34 = uint64((arg1[5]) * ((arg2[6]) * (0x13)))
+	x35 = uint64((arg1[5]) * ((arg2[5]) * (0x26)))
+	x36 = uint64((arg1[4]) * ((arg2[9]) * (0x13)))
+	x37 = uint64((arg1[4]) * ((arg2[8]) * (0x13)))
+	x38 = uint64((arg1[4]) * ((arg2[7]) * (0x13)))
+	x39 = uint64((arg1[4]) * ((arg2[6]) * (0x13)))
+	x40 = uint64((arg1[3]) * ((arg2[9]) * (0x26)))
+	x41 = uint64((arg1[3]) * ((arg2[8]) * (0x13)))
+	x42 = uint64((arg1[3]) * ((arg2[7]) * (0x26)))
+	x43 = uint64((arg1[2]) * ((arg2[9]) * (0x13)))
+	x44 = uint64((arg1[2]) * ((arg2[8]) * (0x13)))
+	x45 = uint64((arg1[1]) * ((arg2[9]) * (0x26)))
+	x46 = uint64((arg1[9]) * (arg2[0]))
+	x47 = uint64((arg1[8]) * (arg2[1]))
+	x48 = uint64((arg1[8]) * (arg2[0]))
+	x49 = uint64((arg1[7]) * (arg2[2]))
+	x50 = uint64((arg1[7]) * ((arg2[1]) * 0x2))
+	x51 = uint64((arg1[7]) * (arg2[0]))
+	x52 = uint64((arg1[6]) * (arg2[3]))
+	x53 = uint64((arg1[6]) * (arg2[2]))
+	x54 = uint64((arg1[6]) * (arg2[1]))
+	x55 = uint64((arg1[6]) * (arg2[0]))
+	x56 = uint64((arg1[5]) * (arg2[4]))
+	x57 = uint64((arg1[5]) * ((arg2[3]) * 0x2))
+	x58 = uint64((arg1[5]) * (arg2[2]))
+	x59 = uint64((arg1[5]) * ((arg2[1]) * 0x2))
+	x60 = uint64((arg1[5]) * (arg2[0]))
+	x61 = uint64((arg1[4]) * (arg2[5]))
+	x62 = uint64((arg1[4]) * (arg2[4]))
+	x63 = uint64((arg1[4]) * (arg2[3]))
+	x64 = uint64((arg1[4]) * (arg2[2]))
+	x65 = uint64((arg1[4]) * (arg2[1]))
+	x66 = uint64((arg1[4]) * (arg2[0]))
+	x67 = uint64((arg1[3]) * (arg2[6]))
+	x68 = uint64((arg1[3]) * ((arg2[5]) * 0x2))
+	x69 = uint64((arg1[3]) * (arg2[4]))
+	x70 = uint64((arg1[3]) * ((arg2[3]) * 0x2))
+	x71 = uint64((arg1[3]) * (arg2[2]))
+	x72 = uint64((arg1[3]) * ((arg2[1]) * 0x2))
+	x73 = uint64((arg1[3]) * (arg2[0]))
+	x74 = uint64((arg1[2]) * (arg2[7]))
+	x75 = uint64((arg1[2]) * (arg2[6]))
+	x76 = uint64((arg1[2]) * (arg2[5]))
+	x77 = uint64((arg1[2]) * (arg2[4]))
+	x78 = uint64((arg1[2]) * (arg2[3]))
+	x79 = uint64((arg1[2]) * (arg2[2]))
+	x80 = uint64((arg1[2]) * (arg2[1]))
+	x81 = uint64((arg1[2]) * (arg2[0]))
+	x82 = uint64((arg1[1]) * (arg2[8]))
+	x83 = uint64((arg1[1]) * ((arg2[7]) * 0x2))
+	x84 = uint64((arg1[1]) * (arg2[6]))
+	x85 = uint64((arg1[1]) * ((arg2[5]) * 0x2))
+	x86 = uint64((arg1[1]) * (arg2[4]))
+	x87 = uint64((arg1[1]) * ((arg2[3]) * 0x2))
+	x88 = uint64((arg1[1]) * (arg2[2]))
+	x89 = uint64((arg1[1]) * ((arg2[1]) * 0x2))
+	x90 = uint64((arg1[1]) * (arg2[0]))
+	x91 = uint64((arg1[0]) * (arg2[9]))
+	x92 = uint64((arg1[0]) * (arg2[8]))
+	x93 = uint64((arg1[0]) * (arg2[7]))
+	x94 = uint64((arg1[0]) * (arg2[6]))
+	x95 = uint64((arg1[0]) * (arg2[5]))
+	x96 = uint64((arg1[0]) * (arg2[4]))
+	x97 = uint64((arg1[0]) * (arg2[3]))
+	x98 = uint64((arg1[0]) * (arg2[2]))
+	x99 = uint64((arg1[0]) * (arg2[1]))
+	x100 = uint64((arg1[0]) * (arg2[0]))
+	x101 = (x100 + (x45 + (x44 + (x42 + (x39 + (x35 + (x30 + (x24 + (x17 + x9)))))))))
+	x102 = (x101 >> 26)
+	x103 = uint32(uint32(x101) & uint32(0x3ffffff))
+	x104 = (x91 + (x82 + (x74 + (x67 + (x61 + (x56 + (x52 + (x49 + (x47 + x46)))))))))
+	x105 = (x92 + (x83 + (x75 + (x68 + (x62 + (x57 + (x53 + (x50 + (x48 + x1)))))))))
+	x106 = (x93 + (x84 + (x76 + (x69 + (x63 + (x58 + (x54 + (x51 + (x10 + x2)))))))))
+	x107 = (x94 + (x85 + (x77 + (x70 + (x64 + (x59 + (x55 + (x18 + (x11 + x3)))))))))
+	x108 = (x95 + (x86 + (x78 + (x71 + (x65 + (x60 + (x25 + (x19 + (x12 + x4)))))))))
+	x109 = (x96 + (x87 + (x79 + (x72 + (x66 + (x31 + (x26 + (x20 + (x13 + x5)))))))))
+	x110 = (x97 + (x88 + (x80 + (x73 + (x36 + (x32 + (x27 + (x21 + (x14 + x6)))))))))
+	x111 = (x98 + (x89 + (x81 + (x40 + (x37 + (x33 + (x28 + (x22 + (x15 + x7)))))))))
+	x112 = (x99 + (x90 + (x43 + (x41 + (x38 + (x34 + (x29 + (x23 + (x16 + x8)))))))))
+	x113 = (x102 + x112)
+	x114 = (x113 >> 25)
+	x115 = uint32(uint32(x113) & uint32(0x1ffffff))
+	x116 = (x114 + x111)
+	x117 = (x116 >> 26)
+	x118 = uint32(uint32(x116) & uint32(0x3ffffff))
+	x119 = (x117 + x110)
+	x120 = (x119 >> 25)
+	x121 = uint32(uint32(x119) & uint32(0x1ffffff))
+	x122 = (x120 + x109)
+	x123 = (x122 >> 26)
+	x124 = uint32(uint32(x122) & uint32(0x3ffffff))
+	x125 = (x123 + x108)
+	x126 = (x125 >> 25)
+	x127 = uint32(uint32(x125) & uint32(0x1ffffff))
+	x128 = (x126 + x107)
+	x129 = (x128 >> 26)
+	x130 = uint32(uint32(x128) & uint32(0x3ffffff))
+	x131 = (x129 + x106)
+	x132 = (x131 >> 25)
+	x133 = uint32(uint32(x131) & uint32(0x1ffffff))
+	x134 = (x132 + x105)
+	x135 = (x134 >> 26)
+	x136 = uint32(uint32(x134) & uint32(0x3ffffff))
+	x137 = (x135 + x104)
+	x138 = (x137 >> 25)
+	x139 = uint32(uint32(x137) & uint32(0x1ffffff))
+	x140 = (x138 * (0x13))
+	x141 = uint64(x103 + uint32(x140))
+	x142 = uint32(x141 >> 26)
+	//x143 = uint32(uint32(x141) & uint32(0x3ffffff))
+	x143 = uint32(x141 & 0x3ffffff)
+	x144 = (x142 + x115)
+	x145 = (fiat25519Uint1)(x144 >> 25)
+	x146 = (x144 & uint32(0x1ffffff))
+	x147 = (uint32(x145) + x118)
+	out1[0] = x143
+	out1[1] = x146
+	out1[2] = x147
+	out1[3] = x121
+	out1[4] = x124
+	out1[5] = x127
+	out1[6] = x130
+	out1[7] = x133
+	out1[8] = x136
+	out1[9] = x139
+
+	return out1
+}
+
 func fiat25519CarryMulBak(out1 Fiat25519FieldElement, arg1 Fiat25519FieldElement, arg2 Fiat25519FieldElement) Fiat25519FieldElement {
 	var x [147]uint64
 	var x103 uint32
@@ -841,7 +857,7 @@ func fiat25519Carry(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement) {
 
 func fiat25519Add(out1 *Fiat25519FieldElement, arg1, arg2 *Fiat25519FieldElement) {
 	for i := 0; i < 10; i++ {
-		out1[i] = (*arg1)[i] + (*arg2)[i]
+		(*out1)[i] = (*arg1)[i] + (*arg2)[i]
 	}
 }
 
