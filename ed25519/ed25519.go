@@ -2,17 +2,17 @@ package ed25519
 
 import (
 	"bytes"
-	"errors"
+	"log"
 )
 
 const FE_NUM_LIMBS = 10
 
 type Fe struct {
-	v [FE_NUM_LIMBS]uint32
+	v Fiat25519FieldElement
 }
 
 type Fe_loose struct {
-	v [FE_NUM_LIMBS]uint32
+	v Fiat25519FieldElement
 }
 
 var d = Fe{
@@ -29,7 +29,7 @@ var sqrtm1 = Fe{
 	},
 }
 
-var d2 = Fe{
+var D2 = Fe{
 	v: [FE_NUM_LIMBS]uint32{
 		45281625, 27714825, 36363642, 13898781, 229458, 15978800, 54557047,
 		27058993, 29715967, 9444199,
@@ -66,75 +66,75 @@ func fe_copy_lt(h *Fe_loose, f *Fe) {
 	h.v = f.v
 }
 
-func Fe_frombytes_strict(h *Fe, s [32]byte) error {
-	if s[31]&0x80 != 0 {
-		return errors.New("top-most bit must be clear")
-	}
-	// fiat_25519_from_bytes(h.v[:], s[:])
-	return nil // Placeholder for actual implementation
-}
+func Fe_frombytes_strict(h *Fe, s []byte) {
+	// |fiat_25519_from_bytes| requires the top-most bit be clear.
 
-func Fe_frombytes(h *Fe, s [32]byte) {
+	fiat25519FromBytes(&h.v, s)
+}
+func Fe_frombytes(h *Fe, s []byte) {
 	var s_copy [32]byte
 	copy(s_copy[:], s[:])
 	s_copy[31] &= 0x7f
-	_ = Fe_frombytes_strict(h, s_copy)
+	Fe_frombytes_strict(h, s_copy[:])
 }
 
-func Fe_tobytes(s *[32]byte, f *Fe) {
-	// fiat_25519_to_bytes(s[:], f.v[:])
+func Fe_tobytes(s *[]byte, f *Fe) {
+	fiat25519ToBytes(s, &f.v)
 }
 
 func Fe_add(h *Fe_loose, f *Fe, g *Fe) {
-	// fiat_25519_add(h.v[:], f.v[:], g.v[:])
+	fiat25519Add(&h.v, &f.v, &g.v)
 }
 
 func Fe_sub(h *Fe_loose, f *Fe, g *Fe) {
-	// fiat_25519_sub(h.v[:], f.v[:], g.v[:])
+	fiat25519Sub(&h.v, &f.v, &g.v)
 }
 
 func Fe_carry(h *Fe, f *Fe_loose) {
-	// fiat_25519_carry(h.v[:], f.v[:])
+	fiat25519Carry(&h.v, &f.v)
 }
 
-func Fe_mul_impl(out *[FE_NUM_LIMBS]uint32, in1 *[FE_NUM_LIMBS]uint32, in2 *[FE_NUM_LIMBS]uint32) {
-	// fiat_25519_carry_mul(out[:], in1[:], in2[:])
+func Fe_mul_impl(out Fiat25519FieldElement, in1 *Fiat25519FieldElement, in2 *Fiat25519FieldElement) Fiat25519FieldElement {
+
+	return fiat25519CarryMul(out, *in1, *in2)
+
 }
 
 func Fe_mul_ltt(h *Fe_loose, f *Fe, g *Fe) {
-	Fe_mul_impl(&h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
 }
 
 func Fe_mul_llt(h *Fe_loose, f *Fe_loose, g *Fe) {
-	Fe_mul_impl(&h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
 }
 
 func Fe_mul_ttt(h *Fe, f *Fe, g *Fe) {
-	Fe_mul_impl(&h.v, &f.v, &g.v)
+
+	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
 }
 
 func Fe_mul_tlt(h *Fe, f *Fe_loose, g *Fe) {
-	Fe_mul_impl(&h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
 }
 
 func fe_mul_ttl(h *Fe, f *Fe, g *Fe_loose) {
-	Fe_mul_impl(&h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
 }
 
 func fe_mul_tll(h *Fe, f *Fe_loose, g *Fe_loose) {
-	Fe_mul_impl(&h.v, &f.v, &g.v)
+	h.v = Fe_mul_impl(h.v, &f.v, &g.v)
 }
 
 func fe_sq_tl(h *Fe, f *Fe_loose) {
-	// fiat_25519_carry_square(h.v[:], f.v[:])
+	h.v = fiat25519CarrySquare(h.v, &f.v)
 }
 
 func fe_sq_tt(h *Fe, f *Fe) {
-	// fiat_25519_carry_square(h.v[:], f.v[:])
+	h.v = fiat25519CarrySquare(h.v, &f.v)
 }
 
 func fe_neg(h *Fe_loose, f *Fe) {
-	// fiat_25519_opp(h.v[:], f.v[:])
+	fiat25519Opp(&h.v, &f.v)
 }
 
 func Fe_cmov(f *Fe_loose, g *Fe_loose, b uint32) {
@@ -151,8 +151,16 @@ func fe_copy_ll(h *Fe_loose, f *Fe_loose) {
 }
 
 func fe_loose_invert(out *Fe, z *Fe_loose) {
-	var t0, t1, t2, t3 Fe
-	for i := 1; i < 2; i++ {
+	var t0 Fe
+	var t1 Fe
+	var t2 Fe
+	var t3 Fe
+
+	var i int
+
+	fe_sq_tl(&t0, z)
+	fe_sq_tt(&t1, &t0)
+	for i = 1; i < 2; i++ {
 		fe_sq_tt(&t1, &t1)
 	}
 	Fe_mul_tlt(&t1, z, &t1)
@@ -160,42 +168,42 @@ func fe_loose_invert(out *Fe, z *Fe_loose) {
 	fe_sq_tt(&t2, &t0)
 	Fe_mul_ttt(&t1, &t1, &t2)
 	fe_sq_tt(&t2, &t1)
-	for i := 1; i < 5; i++ {
+	for i = 1; i < 5; i++ {
 		fe_sq_tt(&t2, &t2)
 	}
 	Fe_mul_ttt(&t1, &t2, &t1)
 	fe_sq_tt(&t2, &t1)
-	for i := 1; i < 10; i++ {
+	for i = 1; i < 10; i++ {
 		fe_sq_tt(&t2, &t2)
 	}
 	Fe_mul_ttt(&t2, &t2, &t1)
 	fe_sq_tt(&t3, &t2)
-	for i := 1; i < 20; i++ {
+	for i = 1; i < 20; i++ {
 		fe_sq_tt(&t3, &t3)
 	}
 	Fe_mul_ttt(&t2, &t3, &t2)
 	fe_sq_tt(&t2, &t2)
-	for i := 1; i < 10; i++ {
+	for i = 1; i < 10; i++ {
 		fe_sq_tt(&t2, &t2)
 	}
 	Fe_mul_ttt(&t1, &t2, &t1)
 	fe_sq_tt(&t2, &t1)
-	for i := 1; i < 50; i++ {
+	for i = 1; i < 50; i++ {
 		fe_sq_tt(&t2, &t2)
 	}
 	Fe_mul_ttt(&t2, &t2, &t1)
 	fe_sq_tt(&t3, &t2)
-	for i := 1; i < 100; i++ {
+	for i = 1; i < 100; i++ {
 		fe_sq_tt(&t3, &t3)
 	}
 	Fe_mul_ttt(&t2, &t3, &t2)
 	fe_sq_tt(&t2, &t2)
-	for i := 1; i < 50; i++ {
+	for i = 1; i < 50; i++ {
 		fe_sq_tt(&t2, &t2)
 	}
 	Fe_mul_ttt(&t1, &t2, &t1)
 	fe_sq_tt(&t1, &t1)
-	for i := 1; i < 5; i++ {
+	for i = 1; i < 5; i++ {
 		fe_sq_tt(&t1, &t1)
 	}
 	Fe_mul_ttt(out, &t1, &t0)
@@ -211,24 +219,43 @@ func fe_invert(out *Fe, z *Fe) {
 func fe_isnonzero(f *Fe_loose) int {
 	var tight Fe
 	Fe_carry(&tight, f)
-	var s [32]byte
+	//var s [32]byte
+	var s = make([]byte, 32)
 	Fe_tobytes(&s, &tight)
 
 	var zero [32]byte
-	return binary.BigEndian.Uint32(s[:]) != binary.BigEndian.Uint32(zero[:])
+	if binary.BigEndian.Uint32(s[:]) != binary.BigEndian.Uint32(zero[:]) {
+		return 1
+	}
+	return 0
 }*/
 
 func fe_isnonzero(f *Fe_loose) bool {
 	var tight Fe
 	Fe_carry(&tight, f)
+	var s = make([]byte, 32)
+	Fe_tobytes(&s, &tight)
+	zero := make([]byte, 32)
+	// 比较 s 和 zero
+	return bytes.Compare(s, zero) != 0
+}
+
+/*
+func fe_isnonzero(f *Fe_loose) int {
+	var tight Fe
+	Fe_carry(&tight, f)
 	s := make([]byte, 32)
 	Fe_tobytes(&s, &tight)
 	zero := make([]byte, 32)
-	return !bytes.Equal(s, zero)
-}
+	if !bytes.Equal(s, zero) {
+		return 1
+	}
+	return 0
+}*/
 
 func fe_isnegative(f *Fe) int {
-	var s [32]byte
+	//var s [32]byte
+	var s = make([]byte, 32)
 	Fe_tobytes(&s, f)
 	return int(s[0] & 1)
 }
@@ -240,7 +267,7 @@ func fe_sq2_tt(h *Fe, f *Fe) {
 	Fe_carry(h, &tmp)
 }
 
-func fe_pow22523(out *Fe, z *Fe) {
+func fe_pow22523Bak(out *Fe, z *Fe) {
 	var t0, t1, t2 Fe
 	for i := 1; i < 2; i++ {
 		fe_sq_tt(&t1, &t1)
@@ -286,6 +313,61 @@ func fe_pow22523(out *Fe, z *Fe) {
 	Fe_mul_ttt(&t0, &t1, &t0)
 	fe_sq_tt(&t0, &t0)
 	for i := 1; i < 2; i++ {
+		fe_sq_tt(&t0, &t0)
+	}
+	Fe_mul_ttt(out, &t0, z)
+}
+
+func fe_pow22523(out *Fe, z *Fe) {
+	var t0, t1, t2 Fe
+	var i int
+
+	fe_sq_tt(&t0, z)
+	fe_sq_tt(&t1, &t0)
+	for i = 1; i < 2; i++ {
+		fe_sq_tt(&t1, &t1)
+	}
+	Fe_mul_ttt(&t1, z, &t1)
+	Fe_mul_ttt(&t0, &t0, &t1)
+	fe_sq_tt(&t0, &t0)
+	Fe_mul_ttt(&t0, &t1, &t0)
+	fe_sq_tt(&t1, &t0)
+	for i = 1; i < 5; i++ {
+		fe_sq_tt(&t1, &t1)
+	}
+	Fe_mul_ttt(&t0, &t1, &t0)
+	fe_sq_tt(&t1, &t0)
+	for i = 1; i < 10; i++ {
+		fe_sq_tt(&t1, &t1)
+	}
+	Fe_mul_ttt(&t1, &t1, &t0)
+	fe_sq_tt(&t2, &t1)
+	for i = 1; i < 20; i++ {
+		fe_sq_tt(&t2, &t2)
+	}
+	Fe_mul_ttt(&t1, &t2, &t1)
+	fe_sq_tt(&t1, &t1)
+	for i = 1; i < 10; i++ {
+		fe_sq_tt(&t1, &t1)
+	}
+	Fe_mul_ttt(&t0, &t1, &t0)
+	fe_sq_tt(&t1, &t0)
+	for i = 1; i < 50; i++ {
+		fe_sq_tt(&t1, &t1)
+	}
+	Fe_mul_ttt(&t1, &t1, &t0)
+	fe_sq_tt(&t2, &t1)
+	for i = 1; i < 100; i++ {
+		fe_sq_tt(&t2, &t2)
+	}
+	Fe_mul_ttt(&t1, &t2, &t1)
+	fe_sq_tt(&t1, &t1)
+	for i = 1; i < 50; i++ {
+		fe_sq_tt(&t1, &t1)
+	}
+	Fe_mul_ttt(&t0, &t1, &t0)
+	fe_sq_tt(&t0, &t0)
+	for i = 1; i < 2; i++ {
 		fe_sq_tt(&t0, &t0)
 	}
 	Fe_mul_ttt(out, &t0, z)
@@ -347,7 +429,7 @@ func X25519_ge_p3_to_cached(r *Ge_cached, p *Ge_p3) {
 	Fe_add(&r.YplusX, &p.Y, &p.X)
 	Fe_sub(&r.YminusX, &p.Y, &p.X)
 	fe_copy_lt(&r.Z, &p.Z)
-	Fe_mul_ltt(&r.T2d, &p.T, &d2)
+	Fe_mul_ltt(&r.T2d, &p.T, &D2)
 }
 
 func X25519_ge_p1p1_to_p2(r *Ge_p2, p *Ge_p1p1) {
@@ -387,24 +469,24 @@ func Ge_p2_dbl(r *Ge_p1p1, p *Ge_p2) {
 	Fe_sub(&r.T, &trT, &trZ)
 }
 
-func X25519_ge_tobytes(s *[32]byte, h *Ge_p2) {
+func X25519_ge_tobytes(s *[]byte, h *Ge_p2) {
 	var recip, x, y Fe
-
 	fe_invert(&recip, &h.Z)
 	Fe_mul_ttt(&x, &h.X, &recip)
 	Fe_mul_ttt(&y, &h.Y, &recip)
+
 	Fe_tobytes(s, &y)
-	s[31] ^= byte(fe_isnegative(&x) << 7)
+	(*s)[31] ^= byte(fe_isnegative(&x) << 7)
 }
 
-func ge_p3_tobytes(s *[32]byte, h *Ge_p3) {
+func ge_p3_tobytes(s *[]byte, h *Ge_p3) {
 	var recip, x, y Fe
 
 	fe_invert(&recip, &h.Z)
 	Fe_mul_ttt(&x, &h.X, &recip)
 	Fe_mul_ttt(&y, &h.Y, &recip)
 	Fe_tobytes(s, &y)
-	s[31] ^= byte(fe_isnegative(&x) << 7)
+	(*s)[31] ^= byte(fe_isnegative(&x) << 7)
 }
 
 func Ge_madd(r *Ge_p1p1, p *Ge_p3, q *Ge_precomp) {
@@ -473,19 +555,21 @@ func X25519_ge_sub(r *Ge_p1p1, p *Ge_p3, q *Ge_cached) {
 	Fe_add(&r.T, &trZ, &trT)
 }
 
-func X25519_ge_frombytes_vartime(h *Ge_p3, s [32]byte) int {
-	var u, v Fe
-	var v3, vxx Fe
+func X25519_ge_frombytes_vartime(h *Ge_p3, s []byte) int {
+	var u Fe
+	var v Fe_loose
+	var v3 Fe
+	var vxx Fe
 	var check Fe_loose
 
 	Fe_frombytes(&h.Y, s)
 	fe_1(&h.Z)
 	fe_sq_tt(&v3, &h.Y)
 	Fe_mul_ttt(&vxx, &v3, &d)
-	Fe_sub(&u, &v3, &h.Z) // u = y^2-1
+	Fe_sub(&v, &v3, &h.Z) // u = y^2-1
 	Fe_carry(&u, &v)
 	Fe_add(&v, &vxx, &h.Z) // v = dy^2+1
-
+	log.Printf("vxx  vxx1:%+v  \r\n", vxx)
 	fe_sq_tl(&v3, &v)
 	fe_mul_ttl(&v3, &v3, &v) // v3 = v^3
 	fe_sq_tt(&h.X, &v3)
@@ -497,14 +581,19 @@ func X25519_ge_frombytes_vartime(h *Ge_p3, s [32]byte) int {
 	Fe_mul_ttt(&h.X, &h.X, &u) // x = uv^3(uv^7)^((q-5)/8)
 
 	fe_sq_tt(&vxx, &h.X)
+	log.Printf("vxx  vxx2:%+v h.X:%+v  \r\n", vxx, h.X)
 	fe_mul_ttl(&vxx, &vxx, &v)
+	log.Printf("vxx  vxx3:%+v  \r\n", vxx)
 	Fe_sub(&check, &vxx, &u)
-	if fe_isnonzero(&check) != 0 {
+
+	if fe_isnonzero(&check) {
 		Fe_add(&check, &vxx, &u)
-		if fe_isnonzero(&check) != 0 {
+		log.Printf("dddsdsd6666  vxx:%+v u:%+v \r\n", vxx, u)
+		if fe_isnonzero(&check) {
+			log.Printf("dddsdsd vxx:%+v u:%+v\r\n", vxx, u)
 			return 0
 		}
-		Fe_mul_ttt(&h.X, &h.X, sqrtm1)
+		Fe_mul_ttt(&h.X, &h.X, &sqrtm1)
 	}
 
 	if fe_isnegative(&h.X) != int(s[31]>>7) {
