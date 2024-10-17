@@ -2,7 +2,6 @@ package ed25519
 
 import (
 	"bytes"
-	"log"
 )
 
 const FE_NUM_LIMBS = 10
@@ -569,7 +568,6 @@ func X25519_ge_frombytes_vartime(h *Ge_p3, s []byte) int {
 	Fe_sub(&v, &v3, &h.Z) // u = y^2-1
 	Fe_carry(&u, &v)
 	Fe_add(&v, &vxx, &h.Z) // v = dy^2+1
-	log.Printf("vxx  vxx1:%+v  \r\n", vxx)
 	fe_sq_tl(&v3, &v)
 	fe_mul_ttl(&v3, &v3, &v) // v3 = v^3
 	fe_sq_tt(&h.X, &v3)
@@ -581,16 +579,12 @@ func X25519_ge_frombytes_vartime(h *Ge_p3, s []byte) int {
 	Fe_mul_ttt(&h.X, &h.X, &u) // x = uv^3(uv^7)^((q-5)/8)
 
 	fe_sq_tt(&vxx, &h.X)
-	log.Printf("vxx  vxx2:%+v h.X:%+v  \r\n", vxx, h.X)
 	fe_mul_ttl(&vxx, &vxx, &v)
-	log.Printf("vxx  vxx3:%+v  \r\n", vxx)
 	Fe_sub(&check, &vxx, &u)
 
 	if fe_isnonzero(&check) {
 		Fe_add(&check, &vxx, &u)
-		log.Printf("dddsdsd6666  vxx:%+v u:%+v \r\n", vxx, u)
 		if fe_isnonzero(&check) {
-			log.Printf("dddsdsd vxx:%+v u:%+v\r\n", vxx, u)
 			return 0
 		}
 		Fe_mul_ttt(&h.X, &h.X, &sqrtm1)

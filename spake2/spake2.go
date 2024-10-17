@@ -1,11 +1,11 @@
 package spake2
 
 import (
-	"crypto/rand"
 	"crypto/sha512"
 	"encoding/binary"
 	"errors"
-	mrand "math/rand"
+	"hash"
+	"log"
 	"spake2-go/ed25519"
 	"spake2-go/sha512Test"
 
@@ -142,7 +142,62 @@ var k25519SmallPrecomp = []byte{
 	0x45, 0xc9, 0x8b, 0x17, 0x79, 0xe7, 0xc7, 0x90, 0x99, 0x3a, 0x18, 0x25,
 }
 
-func x25519GeScalarmultSmallPrecomp(h *ed25519.Ge_p3, a []byte, precompTable []byte) {
+func x25519GeScalarmultSmallPrecomp(
+	h *ed25519.Ge_p3, a []byte, precompTable []byte) {
+	// precomp_table is first expanded into matching |ge_precomp|
+	// elements.
+	multiples := make([]ed25519.Ge_precomp, 15)
+
+	var i uint32 = 0
+	for i = 0; i < 15; i++ {
+		// The precomputed table is assumed to already clear the top bit, so
+		// |fe_frombytes_strict| may be used directly.
+		//const uint8_t *bytes = &precomp_table[i*(2*32)]
+		var x, y ed25519.Fe
+		ed25519.Fe_frombytes_strict(&x, precompTable[i*(2*32):])
+		ed25519.Fe_frombytes_strict(&y, precompTable[i*(2*32)+32:])
+
+		ed25519.Fe_add(&multiples[i].Yplusx, &y, &x)
+		ed25519.Fe_sub(&multiples[i].Yminusx, &y, &x)
+		ed25519.Fe_mul_ltt(&multiples[i].Xy2d, &x, &y)
+		ed25519.Fe_mul_llt(&multiples[i].Xy2d, &multiples[i].Xy2d, &ed25519.D2)
+	}
+
+	log.Printf("multiples[i].Xy2d:%+v\r\n", multiples[1].Xy2d)
+
+	// See the comment above |k25519SmallPrecomp| about the structure of the
+	// precomputed elements. This loop does 64 additions and 64 doublings to
+	// calculate the result.
+	ed25519.Ge_p3_0(h)
+
+	for i = 63; i < 64; i-- {
+		var j uint32
+		var index int8 = 0
+
+		for j = 0; j < 4; j++ {
+			bit := 1 & (a[(8*j)+(i/8)] >> (i & 7))
+			index |= int8(bit << j)
+		}
+
+		var e ed25519.Ge_precomp
+		ed25519.Ge_precomp_0(&e)
+
+		for j = 1; j < 16; j++ {
+			cmov(&e, &multiples[j-1], equal(index, int8(j)))
+		}
+
+		var cached ed25519.Ge_cached
+		var r ed25519.Ge_p1p1
+		ed25519.X25519_ge_p3_to_cached(&cached, h)
+		ed25519.X25519_ge_add(&r, h, &cached)
+		ed25519.X25519_ge_p1p1_to_p3(h, &r)
+
+		ed25519.Ge_madd(&r, h, &e)
+		ed25519.X25519_ge_p1p1_to_p3(h, &r)
+	}
+}
+
+func x25519GeScalarmultSmallPrecompBak(h *ed25519.Ge_p3, a []byte, precompTable []byte) {
 	// precomp_table is first expanded into matching |ge_precomp|
 	// elements.
 
@@ -204,7 +259,7 @@ func x25519GeScalarmultBase(h *ed25519.Ge_p3, a []byte) {
 
 // r = scalar * A.
 // where a = a[0]+256*a[1]+...+256^31 a[31].
-func x25519GeScalarmult(r *ed25519.Ge_p2, scalar []byte, A *ed25519.Ge_p3) {
+func x25519GeScalarmultBAk(r *ed25519.Ge_p2, scalar []byte, A *ed25519.Ge_p3) {
 	AiP2 := make([]ed25519.Ge_p2, 8)
 	Ai := make([]ed25519.Ge_cached, 16)
 	t := ed25519.Ge_p1p1{}
@@ -246,6 +301,58 @@ func x25519GeScalarmult(r *ed25519.Ge_p2, scalar []byte, A *ed25519.Ge_p3) {
 		selected := ed25519.Ge_cached{}
 		ed25519.Ge_cached_0(&selected)
 		for j := 0; j < 16; j++ {
+			cmovCached(&selected, &Ai[j], equal(int8(j), int8(index)))
+		}
+
+		ed25519.X25519_ge_add(&t, &u, &selected)
+		ed25519.X25519_ge_p1p1_to_p2(r, &t)
+	}
+}
+
+func x25519GeScalarmult(r *ed25519.Ge_p2, scalar []byte, A *ed25519.Ge_p3) {
+	var Ai_p2 [8]ed25519.Ge_p2
+	var Ai [16]ed25519.Ge_cached
+	var t ed25519.Ge_p1p1
+
+	ed25519.Ge_cached_0(&Ai[0])
+	ed25519.X25519_ge_p3_to_cached(&Ai[1], A)
+	ed25519.Ge_p3_to_p2(&Ai_p2[1], A)
+
+	var i uint32 = 0
+	for i = 2; i < 16; i += 2 {
+		ed25519.Ge_p2_dbl(&t, &Ai_p2[i/2])
+		ed25519.Ge_p1p1_to_cached(&Ai[i], &t)
+		if i < 8 {
+			ed25519.X25519_ge_p1p1_to_p2(&Ai_p2[i], &t)
+		}
+		ed25519.X25519_ge_add(&t, A, &Ai[i])
+		ed25519.Ge_p1p1_to_cached(&Ai[i+1], &t)
+		if i < 7 {
+			ed25519.X25519_ge_p1p1_to_p2(&Ai_p2[i+1], &t)
+		}
+	}
+
+	ed25519.Ge_p2_0(r)
+	var u ed25519.Ge_p3
+
+	for i = 0; i < 256; i += 4 {
+		ed25519.Ge_p2_dbl(&t, r)
+		ed25519.X25519_ge_p1p1_to_p2(r, &t)
+		ed25519.Ge_p2_dbl(&t, r)
+		ed25519.X25519_ge_p1p1_to_p2(r, &t)
+		ed25519.Ge_p2_dbl(&t, r)
+		ed25519.X25519_ge_p1p1_to_p2(r, &t)
+		ed25519.Ge_p2_dbl(&t, r)
+		ed25519.X25519_ge_p1p1_to_p3(&u, &t)
+
+		var index uint8 = scalar[31-i/8]
+		index >>= 4 - (i & 4)
+		index &= 0xf
+
+		var j uint32
+		var selected ed25519.Ge_cached
+		ed25519.Ge_cached_0(&selected)
+		for j = 0; j < 16; j++ {
 			cmovCached(&selected, &Ai[j], equal(int8(j), int8(index)))
 		}
 
@@ -818,11 +925,11 @@ func scalarAdd(dest, src *scalar) {
 }
 
 type spake2Ctx struct {
-	myRole                    int
-	myName                    []uint8
-	myNameLen                 uint32
-	theirName                 []uint8
-	theirNameLen              uint32
+	myRole int
+	myName []uint8
+	//myNameLen                 uint32
+	theirName []uint8
+	//theirNameLen              uint32
 	privateKey                [32]uint8
 	passwordHash              [64]uint8
 	passwordScalar            [32]uint8
@@ -834,111 +941,17 @@ type spake2Ctx struct {
 func SPAKE2_CTX_new(myRole int, myName []uint8, theirName []uint8) (*spake2Ctx, error) {
 	ctx := &spake2Ctx{}
 	ctx.myRole = myRole
-	ctx.myNameLen = uint32(len(myName))
-	ctx.myName = make([]uint8, ctx.myNameLen)
-	copy(ctx.myName, myName)
-	ctx.theirNameLen = uint32(len(theirName))
-	ctx.theirName = make([]uint8, ctx.theirNameLen)
+	//ctx.myNameLen = uint32(len(myName))
+	ctx.myName = myName
+	//ctx.theirNameLen = uint32(len(theirName))
+	ctx.theirName = theirName
 	ctx.myMsg = make([]byte, 32)
-	copy(ctx.theirName, theirName)
 	return ctx, nil
 }
 
 func (ctx *spake2Ctx) SPAKE2_CTX_free() {
 	ctx.myName = nil
 	ctx.theirName = nil
-}
-
-func (ctx *spake2Ctx) SPAKE2_generate_msg_bak(out []byte, maxOutLen uint32, password []byte) (uint32, error) {
-	if ctx.state != 0 { // Assuming 0 is spake2_state_init
-		return 0, errors.New("invalid state")
-	}
-
-	if maxOutLen < uint32(len(ctx.myMsg)) {
-		return 0, errors.New("output length too small")
-	}
-
-	privateTmp := make([]byte, 64)
-	if _, err := rand.Read(privateTmp[:]); err != nil {
-		return 0, err
-	}
-
-	privateTmp = x25519ScReduce(privateTmp)
-	leftShift3(&privateTmp)
-
-	copy(ctx.privateKey[:], privateTmp[:])
-
-	var P ed25519.Ge_p3
-	x25519GeScalarmultBase(&P, ctx.privateKey[:])
-	/*
-		passwordTmp := make([]byte, 64)
-
-		sha := sha512.Sha512Ctx{}
-		sha512.Sha512InitCtx(&sha)
-		sha512.Sha512ProcessBytes(password, &sha)
-		sha512.Sha512FinishCtx(&sha, passwordTmp[:])
-	*/
-	// 创建 SHA-512 哈希对象
-	hasher := sha512.New()
-
-	// 更新哈希对象
-	_, err := hasher.Write(password)
-	if err != nil {
-		panic(err)
-	}
-	// 获取哈希值
-	passwordTmp := hasher.Sum(nil)
-
-	copy(ctx.passwordHash[:], passwordTmp[:])
-	passwordTmp = x25519ScReduce(passwordTmp)
-
-	var passwordScalar scalar
-	copy(passwordScalar.bytes[:], passwordTmp[:])
-
-	if !ctx.disablePasswordScalarHack {
-		order := kOrder
-		var tmp scalar
-
-		scalarCmov(&tmp, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&1), 1))
-		scalarAdd(&passwordScalar, &tmp)
-
-		scalarDouble(&order)
-		scalarCmov(&tmp, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&2), 2))
-		scalarAdd(&passwordScalar, &tmp)
-
-		scalarDouble(&order)
-		scalarCmov(&tmp, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&4), 4))
-		scalarAdd(&passwordScalar, &tmp)
-
-		// assert((passwordScalar.bytes[0] & 7) == 0)
-	}
-
-	copy(ctx.passwordScalar[:], passwordScalar.bytes[:])
-
-	var mask ed25519.Ge_p3
-	var precompTable []byte
-	if ctx.myRole == 0 {
-		precompTable = kSpakeMSmallPrecomp
-	} else {
-		precompTable = kSpakeNSmallPrecomp
-	}
-
-	x25519GeScalarmultSmallPrecomp(&mask, ctx.passwordScalar[:], precompTable)
-
-	var maskCached ed25519.Ge_cached
-	ed25519.X25519_ge_p3_to_cached(&maskCached, &mask)
-
-	var Pstar ed25519.Ge_p1p1
-	ed25519.X25519_ge_add(&Pstar, &P, &maskCached)
-
-	var PstarProj ed25519.Ge_p2
-	ed25519.X25519_ge_p1p1_to_p2(&PstarProj, &Pstar)
-
-	ed25519.X25519_ge_tobytes(&ctx.myMsg, &PstarProj)
-	copy(out, ctx.myMsg)
-	ctx.state = 1 // Assuming 1 is spake2_state_msg_generated
-
-	return uint32(len(ctx.myMsg)), nil
 }
 
 func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password []byte) uint32 {
@@ -951,9 +964,11 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	}
 
 	privateTmp := make([]byte, 64)
-
+	privateTmp[0] = 78
+	privateTmp[1] = 98
+	privateTmp[31] = 9
 	for i := 0; i < 64; i++ {
-		privateTmp[i] = uint8(mrand.Intn(32767))
+		//	privateTmp[i] = uint8(mrand.Intn(32767))
 	}
 
 	privateTmp = x25519ScReduce(privateTmp)
@@ -971,10 +986,8 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	hasher := sha512.New()
 
 	// 更新哈希对象
-	_, err := hasher.Write(password)
-	if err != nil {
-		panic(err)
-	}
+	hasher.Write(password)
+
 	// 获取哈希值
 	passwordTmp := hasher.Sum(nil)
 
@@ -1042,6 +1055,13 @@ func updateWithLengthPrefix(sha *sha512Test.Sha512Ctx, data []uint8, length uint
 	sha512Test.Sha512ProcessBytes(data, sha)
 }
 
+func updateWithLengthPrefixNew(sha hash.Hash, data []uint8) {
+	lenLE := make([]uint8, 8)
+	binary.LittleEndian.PutUint64(lenLE, uint64(len(data)))
+	sha.Write(lenLE)
+	sha.Write(data)
+}
+
 func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, theirMsg []uint8) (uint32, error) {
 	if ctx.state != 1 || len(theirMsg) != 32 { // Assuming 1 is spake2_state_msg_generated
 		return 0, errors.New("invalid state or message length")
@@ -1077,25 +1097,30 @@ func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, th
 
 	dhSharedEncoded := make([]byte, 32)
 	ed25519.X25519_ge_tobytes(&dhSharedEncoded, &dhShared)
-	sha := sha512Test.Sha512Ctx{}
-	sha512Test.Sha512InitCtx(&sha)
-
+	hasher := sha512.New()
 	if ctx.myRole == 0 { // Assuming 0 is spake2_role_alice
-		updateWithLengthPrefix(&sha, ctx.myName, ctx.myNameLen)
-		updateWithLengthPrefix(&sha, ctx.theirName, ctx.theirNameLen)
-		updateWithLengthPrefix(&sha, ctx.myMsg[:], uint32(len(ctx.myMsg)))
-		updateWithLengthPrefix(&sha, theirMsg, 32)
-	} else {
-		updateWithLengthPrefix(&sha, ctx.theirName, ctx.theirNameLen)
-		updateWithLengthPrefix(&sha, ctx.myName, ctx.myNameLen)
-		updateWithLengthPrefix(&sha, theirMsg, 32)
-		updateWithLengthPrefix(&sha, ctx.myMsg[:], uint32(len(ctx.myMsg)))
-	}
-	updateWithLengthPrefix(&sha, dhSharedEncoded[:], uint32(len(dhSharedEncoded)))
-	updateWithLengthPrefix(&sha, ctx.passwordHash[:], uint32(len(ctx.passwordHash)))
 
-	key := [64]uint8{}
-	sha512Test.Sha512FinishCtx(&sha, key[:])
+		//log.Printf("alice:%s|%s|%+v|%+v\r\n", ctx.myName, ctx.theirName, ctx.myMsg, theirMsg)
+		updateWithLengthPrefixNew(hasher, ctx.myName)
+		updateWithLengthPrefixNew(hasher, ctx.theirName)
+		updateWithLengthPrefixNew(hasher, ctx.myMsg)
+		updateWithLengthPrefixNew(hasher, theirMsg)
+		log.Printf("alice dhSharedEncoded:%+v|%+v\r\n", dhSharedEncoded, ctx.passwordHash)
+		log.Printf("alice privateKey:%+v\r\n", ctx.privateKey)
+	} else {
+		//log.Printf("bob:%s|%s|%+v|%+v\r\n", ctx.theirName, ctx.myName, theirMsg, ctx.myMsg)
+		updateWithLengthPrefixNew(hasher, ctx.theirName)
+		updateWithLengthPrefixNew(hasher, ctx.myName)
+		updateWithLengthPrefixNew(hasher, theirMsg)
+		updateWithLengthPrefixNew(hasher, ctx.myMsg)
+		log.Printf("bob dhSharedEncoded:%+v|%+v\r\n", dhSharedEncoded, ctx.passwordHash)
+		log.Printf("bob privateKey:%+v\r\n", ctx.privateKey)
+	}
+
+	updateWithLengthPrefixNew(hasher, dhSharedEncoded[:])
+	updateWithLengthPrefixNew(hasher, ctx.passwordHash[:])
+
+	key := hasher.Sum(nil)
 
 	toCopy := maxOutKeyLen
 	if toCopy > uint32(len(key)) {

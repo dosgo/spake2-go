@@ -68,10 +68,13 @@ func main() {
 	status1, _ = bob.SPAKE2_process_msg(bKey, bKeyLen, aMessage)
 	log.Printf("status:%d err:%v\r\n", status, err)
 	log.Printf("status1:%d\r\n", status1)
-	if status != 2 {
+	if status < 1 {
 		log.Printf("Unable to process their public key")
 		return
 	}
+
+	log.Printf("ALICE(%d) <== %v\n", aKeyLen, aKey)
+	log.Printf("BOB(%d)  <== %v\n", bKeyLen, bKey)
 
 	return
 }
