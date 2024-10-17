@@ -1,4 +1,4 @@
-package sha512
+package sha512Test
 
 import (
 	"encoding/binary"
@@ -75,6 +75,11 @@ func Sha512InitCtx(ctx *Sha512Ctx) {
 	ctx.buflen = 0
 }
 
+func swapBytes(n uint64) uint64 {
+	return (n<<56 | ((n>>8)&0xff00)<<40 | ((n>>24)&0xff0000)<<24 | ((n>>40)&0xff000000)<<8 |
+		((n << 8) & 0xff000000) | ((n << 24) & 0xff0000) | ((n << 40) & 0xff00) | (n >> 56))
+}
+
 func Sha512FinishCtx(ctx *Sha512Ctx, resbuf []byte) []byte {
 	bytes := ctx.buflen
 	var pad uint64
@@ -86,8 +91,8 @@ func Sha512FinishCtx(ctx *Sha512Ctx, resbuf []byte) []byte {
 	}
 	copy(ctx.buffer[bytes:], fillbuf[:pad])
 
-	ctx.buffer[bytes+pad+8/8] = swap(ctx.total[0] << 3)
-	ctx.buffer[bytes+pad/8] = swap((ctx.total[1] << 3) | (ctx.total[0] >> 61))
+	ctx.buffer[bytes+pad+8/8] = uint8(swapBytes(ctx.total[0] << 3))
+	ctx.buffer[bytes+pad/8] = uint8(swapBytes((ctx.total[1] << 3) | (ctx.total[0] >> 61)))
 
 	sha512ProcessBlock(ctx.buffer[:], bytes+pad+16, ctx)
 
@@ -117,7 +122,7 @@ func Sha512ProcessBytes(buffer []byte, ctx *Sha512Ctx) {
 	}
 
 	if len(buffer) >= 128 {
-		sha512ProcessBlock(buffer, len(buffer)&^127, ctx)
+		sha512ProcessBlock(buffer, uint64(len(buffer)&^127), ctx)
 		buffer = buffer[len(buffer)&^127:]
 	}
 
