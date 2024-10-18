@@ -1,5 +1,10 @@
 package ed25519
 
+import (
+	"log"
+	"math/big"
+)
+
 type fiat25519Uint1 uint8
 type fiat25519Int1 int8
 
@@ -53,7 +58,7 @@ func fiat25519CmovznzU32(out1 *uint32, arg1 fiat25519Uint1, arg2 uint32, arg3 ui
 	*out1 = (fiat25519ValueBarrierU32(x2) & arg3) | (fiat25519ValueBarrierU32(^x2) & arg2)
 }
 
-func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1 Fiat25519FieldElement, arg2 Fiat25519FieldElement) Fiat25519FieldElement {
+func fiat25519CarryMulBak1(out1 Fiat25519FieldElement, arg1 Fiat25519FieldElement, arg2 Fiat25519FieldElement) Fiat25519FieldElement {
 	var x1 uint64
 	var x2 uint64
 	var x3 uint64
@@ -301,9 +306,12 @@ func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1 Fiat25519FieldElement, a
 	x98 = uint64((arg1[0]) * (arg2[2]))
 	x99 = uint64((arg1[0]) * (arg2[1]))
 	x100 = uint64((arg1[0]) * (arg2[0]))
+	log.Printf("src x100:%d\r\n", x100)
 	x101 = (x100 + (x45 + (x44 + (x42 + (x39 + (x35 + (x30 + (x24 + (x17 + x9)))))))))
+	log.Printf("src x101:%d\r\n", x101)
 	x102 = (x101 >> 26)
 	x103 = uint32(uint32(x101) & uint32(0x3ffffff))
+	log.Printf("src x103:%+v\r\n", x103)
 	x104 = (x91 + (x82 + (x74 + (x67 + (x61 + (x56 + (x52 + (x49 + (x47 + x46)))))))))
 	x105 = (x92 + (x83 + (x75 + (x68 + (x62 + (x57 + (x53 + (x50 + (x48 + x1)))))))))
 	x106 = (x93 + (x84 + (x76 + (x69 + (x63 + (x58 + (x54 + (x51 + (x10 + x2)))))))))
@@ -312,6 +320,7 @@ func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1 Fiat25519FieldElement, a
 	x109 = (x96 + (x87 + (x79 + (x72 + (x66 + (x31 + (x26 + (x20 + (x13 + x5)))))))))
 	x110 = (x97 + (x88 + (x80 + (x73 + (x36 + (x32 + (x27 + (x21 + (x14 + x6)))))))))
 	x111 = (x98 + (x89 + (x81 + (x40 + (x37 + (x33 + (x28 + (x22 + (x15 + x7)))))))))
+	log.Printf("src x111:%+v\r\n", x111)
 	x112 = (x99 + (x90 + (x43 + (x41 + (x38 + (x34 + (x29 + (x23 + (x16 + x8)))))))))
 	x113 = (x102 + x112)
 	x114 = (x113 >> 25)
@@ -359,6 +368,326 @@ func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1 Fiat25519FieldElement, a
 	out1[7] = x133
 	out1[8] = x136
 	out1[9] = x139
+
+	return out1
+}
+
+func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1, arg2 Fiat25519FieldElement) Fiat25519FieldElement {
+	var x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123, x124, x125, x126, x127, x128, x129, x130, x131, x132, x133, x134, x135, x136, x137, x138, x139, x140, x141, x142, x143, x144, x145, x146, x147 big.Int
+
+	// 计算过程
+	x1.SetUint64(uint64(arg1[9]) * uint64(arg2[9]) * 0x26)
+	x2.SetUint64(uint64(arg1[9]) * uint64(arg2[8]) * 0x13)
+	x3.SetUint64(uint64(arg1[9]) * uint64(arg2[7]) * 0x26)
+	x4.SetUint64(uint64(arg1[9]) * uint64(arg2[6]) * 0x13)
+	x5.SetUint64(uint64(arg1[9]) * uint64(arg2[5]) * 0x26)
+	x6.SetUint64(uint64(arg1[9]) * uint64(arg2[4]) * 0x13)
+	x7.SetUint64(uint64(arg1[9]) * uint64(arg2[3]) * 0x26)
+	x8.SetUint64(uint64(arg1[9]) * uint64(arg2[2]) * 0x13)
+	x9.SetUint64(uint64(arg1[9]) * uint64(arg2[1]) * 0x26)
+	x10.SetUint64(uint64(arg1[8]) * uint64(arg2[9]) * 0x13)
+	x11.SetUint64(uint64(arg1[8]) * uint64(arg2[8]) * 0x13)
+	x12.SetUint64(uint64(arg1[8]) * uint64(arg2[7]) * 0x13)
+	x13.SetUint64(uint64(arg1[8]) * uint64(arg2[6]) * 0x13)
+	x14.SetUint64(uint64(arg1[8]) * uint64(arg2[5]) * 0x13)
+	x15.SetUint64(uint64(arg1[8]) * uint64(arg2[4]) * 0x13)
+	x16.SetUint64(uint64(arg1[8]) * uint64(arg2[3]) * 0x13)
+	x17.SetUint64(uint64(arg1[8]) * uint64(arg2[2]) * 0x13)
+	x18.SetUint64(uint64(arg1[7]) * uint64(arg2[9]) * 0x26)
+	x19.SetUint64(uint64(arg1[7]) * uint64(arg2[8]) * 0x13)
+	x20.SetUint64(uint64(arg1[7]) * uint64(arg2[7]) * 0x26)
+	x21.SetUint64(uint64(arg1[7]) * uint64(arg2[6]) * 0x13)
+	x22.SetUint64(uint64(arg1[7]) * uint64(arg2[5]) * 0x26)
+	x23.SetUint64(uint64(arg1[7]) * uint64(arg2[4]) * 0x13)
+	x24.SetUint64(uint64(arg1[7]) * uint64(arg2[3]) * 0x26)
+	x25.SetUint64(uint64(arg1[6]) * uint64(arg2[9]) * 0x13)
+	x26.SetUint64(uint64(arg1[6]) * uint64(arg2[8]) * 0x13)
+	x27.SetUint64(uint64(arg1[6]) * uint64(arg2[7]) * 0x13)
+	x28.SetUint64(uint64(arg1[6]) * uint64(arg2[6]) * 0x13)
+	x29.SetUint64(uint64(arg1[6]) * uint64(arg2[5]) * 0x13)
+	x30.SetUint64(uint64(arg1[6]) * uint64(arg2[4]) * 0x13)
+	x31.SetUint64(uint64(arg1[5]) * uint64(arg2[9]) * 0x26)
+	x32.SetUint64(uint64(arg1[5]) * uint64(arg2[8]) * 0x13)
+	x33.SetUint64(uint64(arg1[5]) * uint64(arg2[7]) * 0x26)
+	x34.SetUint64(uint64(arg1[5]) * uint64(arg2[6]) * 0x13)
+	x35.SetUint64(uint64(arg1[5]) * uint64(arg2[5]) * 0x26)
+	x36.SetUint64(uint64(arg1[4]) * uint64(arg2[9]) * 0x13)
+	x37.SetUint64(uint64(arg1[4]) * uint64(arg2[8]) * 0x13)
+	x38.SetUint64(uint64(arg1[4]) * uint64(arg2[7]) * 0x13)
+	x39.SetUint64(uint64(arg1[4]) * uint64(arg2[6]) * 0x13)
+	x40.SetUint64(uint64(arg1[3]) * uint64(arg2[9]) * 0x26)
+	x41.SetUint64(uint64(arg1[3]) * uint64(arg2[8]) * 0x13)
+	x42.SetUint64(uint64(arg1[3]) * uint64(arg2[7]) * 0x26)
+	x43.SetUint64(uint64(arg1[2]) * uint64(arg2[9]) * 0x13)
+	x44.SetUint64(uint64(arg1[2]) * uint64(arg2[8]) * 0x13)
+	x45.SetUint64(uint64(arg1[1]) * uint64(arg2[9]) * 0x26)
+	x46.SetUint64(uint64(arg1[9]) * uint64(arg2[0]))
+	x47.SetUint64(uint64(arg1[8]) * uint64(arg2[1]))
+	x48.SetUint64(uint64(arg1[8]) * uint64(arg2[0]))
+	x49.SetUint64(uint64(arg1[7]) * uint64(arg2[2]))
+	x50.SetUint64(uint64(arg1[7]) * uint64(arg2[1]) * 2)
+	x51.SetUint64(uint64(arg1[7]) * uint64(arg2[0]))
+	x52.SetUint64(uint64(arg1[6]) * uint64(arg2[3]))
+	x53.SetUint64(uint64(arg1[6]) * uint64(arg2[2]))
+	x54.SetUint64(uint64(arg1[6]) * uint64(arg2[1]))
+	x55.SetUint64(uint64(arg1[6]) * uint64(arg2[0]))
+	x56.SetUint64(uint64(arg1[5]) * uint64(arg2[4]))
+	x57.SetUint64(uint64(arg1[5]) * uint64(arg2[3]) * 2)
+	x58.SetUint64(uint64(arg1[5]) * uint64(arg2[2]))
+	x59.SetUint64(uint64(arg1[5]) * uint64(arg2[1]) * 2)
+	x60.SetUint64(uint64(arg1[5]) * uint64(arg2[0]))
+	x61.SetUint64(uint64(arg1[4]) * uint64(arg2[5]))
+	x62.SetUint64(uint64(arg1[4]) * uint64(arg2[4]))
+	x63.SetUint64(uint64(arg1[4]) * uint64(arg2[3]))
+	x64.SetUint64(uint64(arg1[4]) * uint64(arg2[2]))
+	x65.SetUint64(uint64(arg1[4]) * uint64(arg2[1]))
+	x66.SetUint64(uint64(arg1[4]) * uint64(arg2[0]))
+	x67.SetUint64(uint64(arg1[3]) * uint64(arg2[6]))
+	x68.SetUint64(uint64(arg1[3]) * uint64(arg2[5]) * 2)
+	x69.SetUint64(uint64(arg1[3]) * uint64(arg2[4]))
+	x70.SetUint64(uint64(arg1[3]) * uint64(arg2[3]) * 2)
+	x71.SetUint64(uint64(arg1[3]) * uint64(arg2[2]))
+	x72.SetUint64(uint64(arg1[3]) * uint64(arg2[1]) * 2)
+	x73.SetUint64(uint64(arg1[3]) * uint64(arg2[0]))
+	x74.SetUint64(uint64(arg1[2]) * uint64(arg2[7]))
+	x75.SetUint64(uint64(arg1[2]) * uint64(arg2[6]))
+	x76.SetUint64(uint64(arg1[2]) * uint64(arg2[5]))
+	x77.SetUint64(uint64(arg1[2]) * uint64(arg2[4]))
+	x78.SetUint64(uint64(arg1[2]) * uint64(arg2[3]))
+	x79.SetUint64(uint64(arg1[2]) * uint64(arg2[2]))
+	x80.SetUint64(uint64(arg1[2]) * uint64(arg2[1]))
+	x81.SetUint64(uint64(arg1[2]) * uint64(arg2[0]))
+	x82.SetUint64(uint64(arg1[1]) * uint64(arg2[8]))
+	x83.SetUint64(uint64(arg1[1]) * uint64(arg2[7]) * 2)
+	x84.SetUint64(uint64(arg1[1]) * uint64(arg2[6]))
+	x85.SetUint64(uint64(arg1[1]) * uint64(arg2[5]) * 2)
+	x86.SetUint64(uint64(arg1[1]) * uint64(arg2[4]))
+	x87.SetUint64(uint64(arg1[1]) * uint64(arg2[3]) * 2)
+	x88.SetUint64(uint64(arg1[1]) * uint64(arg2[2]))
+	x89.SetUint64(uint64(arg1[1]) * uint64(arg2[1]) * 2)
+	x90.SetUint64(uint64(arg1[1]) * uint64(arg2[0]))
+	x91.SetUint64(uint64(arg1[0]) * uint64(arg2[9]))
+	x92.SetUint64(uint64(arg1[0]) * uint64(arg2[8]))
+	x93.SetUint64(uint64(arg1[0]) * uint64(arg2[7]))
+	x94.SetUint64(uint64(arg1[0]) * uint64(arg2[6]))
+	x95.SetUint64(uint64(arg1[0]) * uint64(arg2[5]))
+	x96.SetUint64(uint64(arg1[0]) * uint64(arg2[4]))
+	x97.SetUint64(uint64(arg1[0]) * uint64(arg2[3]))
+	x98.SetUint64(uint64(arg1[0]) * uint64(arg2[2]))
+	x99.SetUint64(uint64(arg1[0]) * uint64(arg2[1]))
+	x100.SetUint64(uint64(arg1[0]) * uint64(arg2[0]))
+
+	temp := big.NewInt(0)
+	temp.Add(temp, &x9)
+	temp.Add(temp, &x17)
+	temp.Add(temp, &x24)
+	temp.Add(temp, &x30)
+	temp.Add(temp, &x35)
+	temp.Add(temp, &x39)
+	temp.Add(temp, &x42)
+	temp.Add(temp, &x44)
+	temp.Add(temp, &x45)
+	temp.Add(temp, &x100)
+
+	x101.Set(temp)
+
+	var x101Copy big.Int
+	x101Copy.Set(&x101)
+	x102.Set(x101Copy.Rsh(&x101Copy, 26))
+
+	temp1 := big.NewInt(0).SetUint64(uint64(x101.Uint64()) & 0x3ffffff)
+	x103.Set(temp1)
+
+	tempX104 := big.NewInt(0).Add(&x91, big.NewInt(0).Add(&x82, big.NewInt(0).Add(&x74, big.NewInt(0).Add(&x67, big.NewInt(0).Add(&x61, big.NewInt(0).Add(&x56, big.NewInt(0).Add(&x52, big.NewInt(0).Add(&x49, big.NewInt(0).Add(&x47, &x46)))))))))
+	x104.Set(tempX104)
+
+	// x105 = (x92 + (x83 + (x75 + (x68 + (x62 + (x57 + (x53 + (x50 + (x48 + x1)))))))))
+	tempX105 := big.NewInt(0).Add(&x92, big.NewInt(0).Add(&x83, big.NewInt(0).Add(&x75, big.NewInt(0).Add(&x68, big.NewInt(0).Add(&x62, big.NewInt(0).Add(&x57, big.NewInt(0).Add(&x53, big.NewInt(0).Add(&x50, big.NewInt(0).Add(&x48, &x1)))))))))
+	x105.Set(tempX105)
+
+	// x106 = (x93 + (x84 + (x76 + (x69 + (x63 + (x58 + (x54 + (x51 + (x10 + x2)))))))))
+	tempX106 := big.NewInt(0).Add(&x93, big.NewInt(0).Add(&x84, big.NewInt(0).Add(&x76, big.NewInt(0).Add(&x69, big.NewInt(0).Add(&x63, big.NewInt(0).Add(&x58, big.NewInt(0).Add(&x54, big.NewInt(0).Add(&x51, big.NewInt(0).Add(&x10, &x2)))))))))
+	x106.Set(tempX106)
+
+	// x107 = (x94 + (x85 + (x77 + (x70 + (x64 + (x59 + (x55 + (x18 + (x11 + x3)))))))))
+	tempX107 := big.NewInt(0).Add(&x94, big.NewInt(0).Add(&x85, big.NewInt(0).Add(&x77, big.NewInt(0).Add(&x70, big.NewInt(0).Add(&x64, big.NewInt(0).Add(&x59, big.NewInt(0).Add(&x55, big.NewInt(0).Add(&x18, big.NewInt(0).Add(&x11, &x3)))))))))
+	x107.Set(tempX107)
+
+	// x108 = (x95 + (x86 + (x78 + (x71 + (x65 + (x60 + (x25 + (x19 + (x12 + x4)))))))))
+	tempX108 := big.NewInt(0).Add(&x95, big.NewInt(0).Add(&x86, big.NewInt(0).Add(&x78, big.NewInt(0).Add(&x71, big.NewInt(0).Add(&x65, big.NewInt(0).Add(&x60, big.NewInt(0).Add(&x25, big.NewInt(0).Add(&x19, big.NewInt(0).Add(&x12, &x4)))))))))
+	x108.Set(tempX108)
+
+	// x109 = (x96 + (x87 + (x79 + (x72 + (x66 + (x31 + (x26 + (x20 + (x13 + x5)))))))))
+	tempX109 := big.NewInt(0).Add(&x96, big.NewInt(0).Add(&x87, big.NewInt(0).Add(&x79, big.NewInt(0).Add(&x72, big.NewInt(0).Add(&x66, big.NewInt(0).Add(&x31, big.NewInt(0).Add(&x26, big.NewInt(0).Add(&x20, big.NewInt(0).Add(&x13, &x5)))))))))
+	x109.Set(tempX109)
+
+	// x110 = (x97 + (x88 + (x80 + (x73 + (x36 + (x32 + (x27 + (x21 + (x14 + x6)))))))))
+	tempX110 := big.NewInt(0).Add(&x97, big.NewInt(0).Add(&x88, big.NewInt(0).Add(&x80, big.NewInt(0).Add(&x73, big.NewInt(0).Add(&x36, big.NewInt(0).Add(&x32, big.NewInt(0).Add(&x27, big.NewInt(0).Add(&x21, big.NewInt(0).Add(&x14, &x6)))))))))
+	x110.Set(tempX110)
+
+	// x111 = (x98 + (x89 + (x81 + (x40 + (x37 + (x33 + (x28 + (x22 + (x15 + x7)))))))))
+	tempX111 := big.NewInt(0).Add(&x98, big.NewInt(0).Add(&x89, big.NewInt(0).Add(&x81, big.NewInt(0).Add(&x40, big.NewInt(0).Add(&x37, big.NewInt(0).Add(&x33, big.NewInt(0).Add(&x28, big.NewInt(0).Add(&x22, big.NewInt(0).Add(&x15, &x7)))))))))
+	x111.Set(tempX111)
+
+	// x112 = (x99 + (x90 + (x43 + (x41 + (x38 + (x34 + (x29 + (x23 + (x16 + x8)))))))))
+	tempX112 := big.NewInt(0).Add(&x99, big.NewInt(0).Add(&x90, big.NewInt(0).Add(&x43, big.NewInt(0).Add(&x41, big.NewInt(0).Add(&x38, big.NewInt(0).Add(&x34, big.NewInt(0).Add(&x29, big.NewInt(0).Add(&x23, big.NewInt(0).Add(&x16, &x8)))))))))
+	x112.Set(tempX112)
+
+	x113.Add(&x102, &x112)
+
+	var x113Copy big.Int
+	x113Copy.Set(&x113)
+
+	// x114 = (x113 >> 25)
+	x114.Set(x113Copy.Rsh(&x113Copy, 25))
+
+	// x115 = uint32(uint32(x113) & uint32(0x1ffffff))
+	temp115 := big.NewInt(0).SetUint64(uint64(x113.Uint64()) & 0x1ffffff)
+	x115.Set(temp115)
+
+	// x116 = (x114 + x111)
+	x116.Add(&x114, &x111)
+
+	// x117 = (x116 >> 26)
+	var x116Copy big.Int
+	x116Copy.Set(&x116)
+
+	x117.Set(x116Copy.Rsh(&x116Copy, 26))
+
+	// x118 = uint32(uint32(x116) & uint32(0x3ffffff))
+	temp118 := big.NewInt(0).SetUint64(uint64(x116.Uint64()) & 0x3ffffff)
+	x118.Set(temp118)
+
+	// x119 = (x117 + x110)
+	x119.Add(&x117, &x110)
+
+	// x120 = (x119 >> 25)
+	var x119Copy big.Int
+	x119Copy.Set(&x119)
+
+	x120.Set(x119Copy.Rsh(&x119Copy, 25))
+
+	// x121 = uint32(uint32(x119) & uint32(0x1ffffff))
+	temp121 := big.NewInt(0).SetUint64(uint64(x119.Uint64()) & 0x1ffffff)
+	x121.Set(temp121)
+
+	// x122 = (x120 + x109)
+	x122.Add(&x120, &x109)
+
+	// x123 = (x122 >> 26)
+	var x122Copy big.Int
+	x122Copy.Set(&x122)
+	x123.Set(x122Copy.Rsh(&x122Copy, 26))
+
+	// x124 = uint32(uint32(x122) & uint32(0x3ffffff))
+	temp124 := big.NewInt(0).SetUint64(uint64(x122.Uint64()) & 0x3ffffff)
+	x124.Set(temp124)
+
+	// x125 = (x123 + x108)
+	x125.Add(&x123, &x108)
+
+	// x126 = (x125 >> 25)
+	var x125Copy big.Int
+	x125Copy.Set(&x125)
+
+	x126.Set(x125Copy.Rsh(&x125Copy, 25))
+
+	// x127 = uint32(uint32(x125) & uint32(0x1ffffff))
+	temp127 := big.NewInt(0).SetUint64(uint64(x125.Uint64()) & 0x1ffffff)
+	x127.Set(temp127)
+
+	// x128 = (x126 + x107)
+	x128.Add(&x126, &x107)
+
+	// x129 = (x128 >> 26)
+
+	var x128Copy big.Int
+	x128Copy.Set(&x128)
+	x129.Set(x128Copy.Rsh(&x128Copy, 26))
+
+	// x130 = uint32(uint32(x128) & uint32(0x3ffffff))
+	temp130 := big.NewInt(0).SetUint64(uint64(x128.Uint64()) & 0x3ffffff)
+	x130.Set(temp130)
+
+	// x131 = (x129 + x106)
+	x131.Add(&x129, &x106)
+
+	// x132 = (x131 >> 25)
+	var x131Copy big.Int
+	x131Copy.Set(&x131)
+	x132.Set(x131Copy.Rsh(&x131Copy, 25))
+
+	// x133 = uint32(uint32(x131) & uint32(0x1ffffff))
+	temp133 := big.NewInt(0).SetUint64(uint64(x131.Uint64()) & 0x1ffffff)
+	x133.Set(temp133)
+
+	// x134 = (x132 + x105)
+	x134.Add(&x132, &x105)
+
+	// x135 = (x134 >> 26)
+	var x134Copy big.Int
+	x134Copy.Set(&x134)
+	x135.Set(x134Copy.Rsh(&x134Copy, 26))
+
+	// x136 = uint32(uint32(x134) & uint32(0x3ffffff))
+	temp136 := big.NewInt(0).SetUint64(uint64(x134.Uint64()) & 0x3ffffff)
+	x136.Set(temp136)
+
+	// x137 = (x135 + x104)
+	x137.Add(&x135, &x104)
+
+	// x138 = (x137 >> 25)
+	var x137Copy big.Int
+	x137Copy.Set(&x137)
+	x138.Set(x137Copy.Rsh(&x137Copy, 25))
+
+	// x139 = uint32(uint32(x137) & uint32(0x1ffffff))
+	temp139 := big.NewInt(0).SetUint64(uint64(x137.Uint64()) & 0x1ffffff)
+	x139.Set(temp139)
+
+	// x140 = (x138 * (0x13))
+	x140.Mul(&x138, big.NewInt(0x13))
+
+	// x141 = uint64(x103 + uint32(x140))
+	temp140 := big.NewInt(0).SetUint64(uint64(x140.Uint64()))
+
+	temp141 := big.NewInt(0).Add(&x103, temp140)
+	x141.Set(temp141)
+
+	// x142 = uint32(x141 >> 26)
+	var x141Copy big.Int
+	x141Copy.Set(&x141)
+	x142.Set(x141Copy.Rsh(&x141Copy, 26))
+
+	// x143 = uint32(x141 & 0x3ffffff)
+	x143.SetUint64(x141.Uint64() & 0x3ffffff)
+
+	// x144 = (x142 + x115)
+	x144.Add(&x142, &x115)
+
+	// x145 = (fiat25519Uint1)(x144 >> 25)
+	var x144Copy big.Int
+	x144Copy.Set(&x144)
+	x145.Set(x144Copy.Rsh(&x144Copy, 25))
+
+	// x146 = (x144 & uint32(0x1ffffff))
+	temp146 := big.NewInt(0).SetUint64(uint64(x144.Uint64()) & 0x1ffffff)
+	x146.Set(temp146)
+
+	// x147 = (uint32(x145) + x118)
+	temp145 := big.NewInt(0).SetUint64(uint64(x145.Uint64()))
+	x147.Add(temp145, &x118)
+
+	out1[0] = uint32(x143.Uint64())
+	out1[1] = uint32(x146.Uint64())
+	out1[2] = uint32(x147.Uint64())
+	out1[3] = uint32(x121.Uint64())
+	out1[4] = uint32(x124.Uint64())
+	out1[5] = uint32(x127.Uint64())
+	out1[6] = uint32(x130.Uint64())
+	out1[7] = uint32(x133.Uint64())
+	out1[8] = uint32(x136.Uint64())
+	out1[9] = uint32(x139.Uint64())
 
 	return out1
 }
