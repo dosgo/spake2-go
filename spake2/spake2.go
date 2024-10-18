@@ -170,13 +170,13 @@ func x25519GeScalarmultSmallPrecomp(
 	// precomputed elements. This loop does 64 additions and 64 doublings to
 	// calculate the result.
 	ed25519.Ge_p3_0(h)
-
 	for i = 63; i < 64; i-- {
 		var j uint32
 		var index int8 = 0
-
+		var bit uint8
 		for j = 0; j < 4; j++ {
-			bit := 1 & (a[(8*j)+(i/8)] >> (i & 7))
+			bit = 1 & (a[(8*j)+(i/8)] >> (i & 7))
+
 			index |= int8(bit << j)
 		}
 
@@ -189,12 +189,19 @@ func x25519GeScalarmultSmallPrecomp(
 
 		var cached ed25519.Ge_cached
 		var r ed25519.Ge_p1p1
+
 		ed25519.X25519_ge_p3_to_cached(&cached, h)
+
 		ed25519.X25519_ge_add(&r, h, &cached)
+
 		ed25519.X25519_ge_p1p1_to_p3(h, &r)
 
 		ed25519.Ge_madd(&r, h, &e)
+
 		ed25519.X25519_ge_p1p1_to_p3(h, &r)
+		if i == 32 {
+			fmt.Printf("hhhhhhhhhhhh:%+v\r\n", h.T)
+		}
 	}
 }
 
@@ -754,7 +761,7 @@ var kSpakeMSmallPrecomp = []byte{
 
 type scalar struct {
 	bytes [32]uint8
-	words [8]uint32
+	//words [8]uint32
 }
 
 var kOrder = scalar{
@@ -795,28 +802,75 @@ func constantTimeSelect(mask, a, b uint32) uint32 {
 
 func scalarCmov(dest, src *scalar, mask uint32) {
 	for i := 0; i < 8; i++ {
-		dest.words[i] = constantTimeSelect(mask, src.words[i], dest.words[i])
+		data32 := constantTimeSelect(mask, bytesToUint32(src.bytes[i*4:i*4+4]), bytesToUint32(dest.bytes[i*4:i*4+4]))
+		data32Byte := uint32ToBytes(data32)
+		copy(dest.bytes[i*4:], data32Byte)
 	}
 }
 
 func scalarDouble(s *scalar) {
 	var carry uint32
 	for i := 0; i < 8; i++ {
-		carryOut := s.words[i] >> 31
-		s.words[i] = (s.words[i] << 1) | carry
+
+		sword := bytesToUint32(s.bytes[i*4 : i*4+4])
+
+		carryOut := sword >> 31
+		tmp := (sword << 1) | carry
+		data32Byte := uint32ToBytes(uint32(tmp))
+		copy(s.bytes[i*4:], data32Byte)
 		carry = carryOut
 	}
+}
+
+func uint32ToBytes(num uint32) []byte {
+	return []byte{
+		byte(num),
+		byte(num >> 8),
+		byte(num >> 16),
+		byte(num >> 24),
+	}
+}
+
+func bytesToUint32(bytes []byte) uint32 {
+	if len(bytes) < 4 {
+		return 0
+	}
+	return uint32(bytes[0]) | uint32(bytes[1])<<8 | uint32(bytes[2])<<16 | uint32(bytes[3])<<24
+}
+func bytesToUint64(bytes []byte) uint64 {
+	if len(bytes) < 4 {
+		return 0
+	}
+	return uint64(uint32(bytes[0]) | uint32(bytes[1])<<8 | uint32(bytes[2])<<16 | uint32(bytes[3])<<24)
 }
 
 func scalarAdd(dest, src *scalar) {
 	var carry uint32
 	for i := 0; i < 8; i++ {
-		tmp := uint64(dest.words[i]) + uint64(src.words[i]) + uint64(carry)
-		dest.words[i] = uint32(tmp)
-		carry = uint32(tmp >> 32)
+
+		destInt := bytesToUint32(dest.bytes[i*4 : i*4+4])
+		srcInt := bytesToUint32(src.bytes[i*4 : i*4+4])
+
+		tmp := uint64(destInt) + uint64(srcInt) + uint64(carry)
+
+		data32Byte := uint32ToBytes(uint32(tmp))
+		//dest.words[i] = uint32(tmp)
+		copy(dest.bytes[i*4:], data32Byte)
+		carry = uint32(tmp) >> 32
 	}
 }
 
+/*
+	func  scalar_add(scalar *dest,  scalar *src) {
+		var carry uint32
+
+		for  i = 0; i < 8; i++ {
+		  uint64_t tmp = ((uint64_t)dest->words[i] + src->words[i]) + carry;
+		  dest->words[i] = (uint32_t)tmp;
+		  carry = (uint32_t)(tmp >> 32);
+		}
+	  }
+*/
 type spake2Ctx struct {
 	myRole int
 	myName []uint8
@@ -901,23 +955,21 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 		var tmp scalar
 		scalarCmov(&tmp, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&1), 1))
 		scalarAdd(&passwordScalar, &tmp)
-
 		scalarDouble(&order)
-		log.Printf("order:%+v\r\n", order)
-		scalarCmov(&tmp, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&2), 2))
-
-		scalarAdd(&passwordScalar, &tmp)
-
+		var tmp1 scalar
+		scalarCmov(&tmp1, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&2), 2))
+		scalarAdd(&passwordScalar, &tmp1)
 		scalarDouble(&order)
-		scalarCmov(&tmp, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&4), 4))
-		scalarAdd(&passwordScalar, &tmp)
+		var tmp2 scalar
+		scalarCmov(&tmp2, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&4), 4))
+		//log.Printf("password_scalar:%+v\r\n", passwordScalar)
+		scalarAdd(&passwordScalar, &tmp2)
 	}
 
 	copy(ctx.passwordScalar[:], passwordScalar.bytes[:])
 
 	var mask ed25519.Ge_p3
 
-	fmt.Printf("ctx.passwordScalar:%+v\r\n", ctx.passwordScalar)
 	var precompTable []byte
 	if ctx.myRole == 0 {
 		precompTable = kSpakeMSmallPrecomp
@@ -926,7 +978,8 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	}
 
 	x25519GeScalarmultSmallPrecomp(&mask, ctx.passwordScalar[:], precompTable)
-
+	log.Printf("mask t1:%+v\r\n", mask)
+	log.Printf(" ctx.passwordScalar:%+v\r\n", ctx.passwordScalar)
 	// P* = P + mask.
 	var mask_cached ed25519.Ge_cached
 	ed25519.X25519_ge_p3_to_cached(&mask_cached, &mask)
@@ -994,16 +1047,14 @@ func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, th
 		updateWithLengthPrefixNew(hasher, ctx.theirName)
 		updateWithLengthPrefixNew(hasher, ctx.myMsg)
 		updateWithLengthPrefixNew(hasher, theirMsg)
-		log.Printf("alice dhSharedEncoded:%+v|%+v\r\n", dhSharedEncoded, ctx.passwordHash)
-		log.Printf("alice privateKey:%+v\r\n", ctx.privateKey)
+
 	} else {
 		//log.Printf("bob:%s|%s|%+v|%+v\r\n", ctx.theirName, ctx.myName, theirMsg, ctx.myMsg)
 		updateWithLengthPrefixNew(hasher, ctx.theirName)
 		updateWithLengthPrefixNew(hasher, ctx.myName)
 		updateWithLengthPrefixNew(hasher, theirMsg)
 		updateWithLengthPrefixNew(hasher, ctx.myMsg)
-		log.Printf("bob dhSharedEncoded:%+v|%+v\r\n", dhSharedEncoded, ctx.passwordHash)
-		log.Printf("bob privateKey:%+v\r\n", ctx.privateKey)
+
 	}
 
 	updateWithLengthPrefixNew(hasher, dhSharedEncoded[:])

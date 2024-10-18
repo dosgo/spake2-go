@@ -96,10 +96,12 @@ func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1, arg2 Fiat25519FieldElem
 	x39.SetUint64(uint64(arg1[4]) * uint64(arg2[6]) * 0x13)
 	x40.SetUint64(uint64(arg1[3]) * uint64(arg2[9]) * 0x26)
 	x41.SetUint64(uint64(arg1[3]) * uint64(arg2[8]) * 0x13)
-	x42.SetUint64(uint64(arg1[3]) * uint64(arg2[7]) * 0x26)
-	x43.SetUint64(uint64(arg1[2]) * uint64(arg2[9]) * 0x13)
-	x44.SetUint64(uint64(arg1[2]) * uint64(arg2[8]) * 0x13)
-	x45.SetUint64(uint64(arg1[1]) * uint64(arg2[9]) * 0x26)
+
+	x42.Mul(big.NewInt(int64(arg1[3])), new(big.Int).Mul(big.NewInt(int64(arg2[7])), big.NewInt(0x26)))
+	x43.Mul(big.NewInt(int64(arg1[2])), new(big.Int).Mul(big.NewInt(int64(arg2[9])), big.NewInt(0x13)))
+	x44.Mul(big.NewInt(int64(arg1[2])), new(big.Int).Mul(big.NewInt(int64(arg2[8])), big.NewInt(0x13)))
+	x45.Mul(big.NewInt(int64(arg1[1])), new(big.Int).Mul(big.NewInt(int64(arg2[9])), big.NewInt(0x26)))
+
 	x46.SetUint64(uint64(arg1[9]) * uint64(arg2[0]))
 	x47.SetUint64(uint64(arg1[8]) * uint64(arg2[1]))
 	x48.SetUint64(uint64(arg1[8]) * uint64(arg2[0]))
