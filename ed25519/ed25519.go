@@ -268,57 +268,6 @@ func fe_sq2_tt(h *Fe, f *Fe) {
 	Fe_carry(h, &tmp)
 }
 
-func fe_pow22523Bak(out *Fe, z *Fe) {
-	var t0, t1, t2 Fe
-	for i := 1; i < 2; i++ {
-		fe_sq_tt(&t1, &t1)
-	}
-	Fe_mul_ttt(&t1, z, &t1)
-	Fe_mul_ttt(&t0, &t0, &t1)
-	fe_sq_tt(&t0, &t0)
-	Fe_mul_ttt(&t0, &t1, &t0)
-	fe_sq_tt(&t1, &t0)
-	for i := 1; i < 5; i++ {
-		fe_sq_tt(&t1, &t1)
-	}
-	Fe_mul_ttt(&t0, &t1, &t0)
-	fe_sq_tt(&t1, &t0)
-	for i := 1; i < 10; i++ {
-		fe_sq_tt(&t1, &t1)
-	}
-	Fe_mul_ttt(&t1, &t1, &t0)
-	fe_sq_tt(&t2, &t1)
-	for i := 1; i < 20; i++ {
-		fe_sq_tt(&t2, &t2)
-	}
-	Fe_mul_ttt(&t1, &t2, &t1)
-	fe_sq_tt(&t1, &t1)
-	for i := 1; i < 10; i++ {
-		fe_sq_tt(&t1, &t1)
-	}
-	Fe_mul_ttt(&t0, &t1, &t0)
-	fe_sq_tt(&t1, &t0)
-	for i := 1; i < 50; i++ {
-		fe_sq_tt(&t1, &t1)
-	}
-	Fe_mul_ttt(&t1, &t1, &t0)
-	fe_sq_tt(&t2, &t1)
-	for i := 1; i < 100; i++ {
-		fe_sq_tt(&t2, &t2)
-	}
-	Fe_mul_ttt(&t1, &t2, &t1)
-	fe_sq_tt(&t1, &t1)
-	for i := 1; i < 50; i++ {
-		fe_sq_tt(&t1, &t1)
-	}
-	Fe_mul_ttt(&t0, &t1, &t0)
-	fe_sq_tt(&t0, &t0)
-	for i := 1; i < 2; i++ {
-		fe_sq_tt(&t0, &t0)
-	}
-	Fe_mul_ttt(out, &t0, z)
-}
-
 func fe_pow22523(out *Fe, z *Fe) {
 	var t0, t1, t2 Fe
 	var i int
