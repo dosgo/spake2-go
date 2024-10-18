@@ -2,7 +2,6 @@ package ed25519
 
 import (
 	"bytes"
-	"fmt"
 )
 
 const FE_NUM_LIMBS = 10
@@ -103,9 +102,7 @@ func Fe_mul_impl(out Fiat25519FieldElement, in1 Fiat25519FieldElement, in2 Fiat2
 func Fe_mul_ltt(h *Fe_loose, f *Fe, g *Fe) {
 
 	h.v = Fe_mul_impl(h.v, f.v, g.v)
-	if f.v[0] == 15573506 {
-		fmt.Printf("h.v888888888888888:%+v\r\n", h.v)
-	}
+
 }
 
 func Fe_mul_llt(h *Fe_loose, f *Fe_loose, g *Fe) {
