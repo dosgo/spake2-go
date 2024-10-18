@@ -8,7 +8,6 @@ import (
 	"hash"
 	"log"
 	"spake2-go/ed25519"
-	"spake2-go/sha512Test"
 
 	"unsafe"
 )
@@ -943,13 +942,6 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	ctx.state = 1
 
 	return 1
-}
-
-func updateWithLengthPrefix(sha *sha512Test.Sha512Ctx, data []uint8, length uint32) {
-	lenLE := make([]uint8, 8)
-	binary.LittleEndian.PutUint64(lenLE, uint64(length))
-	sha512Test.Sha512ProcessBytes(lenLE, sha)
-	sha512Test.Sha512ProcessBytes(data, sha)
 }
 
 func updateWithLengthPrefixNew(sha hash.Hash, data []uint8) {
