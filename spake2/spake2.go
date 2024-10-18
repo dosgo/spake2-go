@@ -4,6 +4,7 @@ import (
 	"crypto/sha512"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"hash"
 	"log"
 	"spake2-go/ed25519"
@@ -161,9 +162,7 @@ func x25519GeScalarmultSmallPrecomp(
 		ed25519.Fe_sub(&multiples[i].Yminusx, &y, &x)
 
 		ed25519.Fe_mul_ltt(&multiples[i].Xy2d, &x, &y)
-		if i == 1 {
-			log.Printf("multiples[i].Xy2d:%+v x:%+v,y:%+v\r\n", multiples[i].Xy2d, x, y)
-		}
+
 		ed25519.Fe_mul_llt(&multiples[i].Xy2d, &multiples[i].Xy2d, &ed25519.D2)
 
 	}
@@ -200,116 +199,8 @@ func x25519GeScalarmultSmallPrecomp(
 	}
 }
 
-func x25519GeScalarmultSmallPrecompBak(h *ed25519.Ge_p3, a []byte, precompTable []byte) {
-	// precomp_table is first expanded into matching |ge_precomp|
-	// elements.
-
-	multiples := make([]ed25519.Ge_precomp, 15)
-	var i uint32 = 0
-	for i = 0; i < 15; i++ {
-		// The precomputed table is assumed to already clear the top bit, so
-		// |fe_frombytes_strict| may be used directly.
-		bytes := precompTable[i*2*32:]
-		var x, y ed25519.Fe
-		ed25519.Fe_frombytes_strict(&x, bytes)
-		ed25519.Fe_frombytes_strict(&y, bytes[:32])
-
-		out := &multiples[i]
-		ed25519.Fe_add(&out.Yplusx, &y, &x)
-		ed25519.Fe_sub(&out.Yminusx, &y, &x)
-		ed25519.Fe_mul_ltt(&out.Xy2d, &x, &y)
-		ed25519.Fe_mul_llt(&out.Xy2d, &out.Xy2d, &ed25519.D2)
-	}
-
-	// See the comment above |k25519SmallPrecomp| about the structure of the
-	// precomputed elements. This loop does 64 additions and 64 doublings to
-	// calculate the result.
-
-	ed25519.Ge_p3_0(h)
-
-	for i = 63; i < 64; i-- {
-		var j = 0
-		index := int8(0)
-
-		for j = 0; j < 4; j++ {
-			bit := uint8(1) & (a[(8*j)+(int(i)/8)] >> (i & 7))
-			index |= int8(bit << j)
-		}
-
-		var e ed25519.Ge_precomp
-		ed25519.Ge_precomp_0(&e)
-
-		for j = 1; j < 16; j++ {
-			cmov(&e, &multiples[j-1], equal(index, int8(j)))
-		}
-
-		var cached ed25519.Ge_cached
-		var r ed25519.Ge_p1p1
-		ed25519.X25519_ge_p3_to_cached(&cached, h)
-
-		ed25519.X25519_ge_add(&r, h, &cached)
-
-		ed25519.X25519_ge_p1p1_to_p3(h, &r)
-
-		ed25519.Ge_madd(&r, h, &e)
-		ed25519.X25519_ge_p1p1_to_p3(h, &r)
-	}
-}
-
 func x25519GeScalarmultBase(h *ed25519.Ge_p3, a []byte) {
 	x25519GeScalarmultSmallPrecomp(h, a, k25519SmallPrecomp)
-}
-
-// r = scalar * A.
-// where a = a[0]+256*a[1]+...+256^31 a[31].
-func x25519GeScalarmultBAk(r *ed25519.Ge_p2, scalar []byte, A *ed25519.Ge_p3) {
-	AiP2 := make([]ed25519.Ge_p2, 8)
-	Ai := make([]ed25519.Ge_cached, 16)
-	t := ed25519.Ge_p1p1{}
-
-	ed25519.Ge_cached_0(&Ai[0])
-	ed25519.X25519_ge_p3_to_cached(&Ai[1], A)
-	ed25519.Ge_p3_to_p2(&AiP2[1], A)
-
-	for i := 2; i < 16; i += 2 {
-		ed25519.Ge_p2_dbl(&t, &AiP2[i/2])
-		ed25519.Ge_p1p1_to_cached(&Ai[i], &t)
-		if i < 8 {
-			ed25519.X25519_ge_p1p1_to_p2(&AiP2[i], &t)
-		}
-		ed25519.X25519_ge_add(&t, A, &Ai[i])
-		ed25519.Ge_p1p1_to_cached(&Ai[i+1], &t)
-		if i < 7 {
-			ed25519.X25519_ge_p1p1_to_p2(&AiP2[i+1], &t)
-		}
-	}
-
-	ed25519.Ge_p2_0(r)
-	u := ed25519.Ge_p3{}
-
-	for i := 0; i < 256; i += 4 {
-		ed25519.Ge_p2_dbl(&t, r)
-		ed25519.X25519_ge_p1p1_to_p2(r, &t)
-		ed25519.Ge_p2_dbl(&t, r)
-		ed25519.X25519_ge_p1p1_to_p2(r, &t)
-		ed25519.Ge_p2_dbl(&t, r)
-		ed25519.X25519_ge_p1p1_to_p2(r, &t)
-		ed25519.Ge_p2_dbl(&t, r)
-		ed25519.X25519_ge_p1p1_to_p3(&u, &t)
-
-		index := scalar[31-(i/8)]
-		index >>= 4 - (i & 4)
-		index &= 0xf
-
-		selected := ed25519.Ge_cached{}
-		ed25519.Ge_cached_0(&selected)
-		for j := 0; j < 16; j++ {
-			cmovCached(&selected, &Ai[j], equal(int8(j), int8(index)))
-		}
-
-		ed25519.X25519_ge_add(&t, &u, &selected)
-		ed25519.X25519_ge_p1p1_to_p2(r, &t)
-	}
 }
 
 func x25519GeScalarmult(r *ed25519.Ge_p2, scalar []byte, A *ed25519.Ge_p3) {
@@ -982,8 +873,8 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 
 	copy(ctx.privateKey[:], privateTmp[:])
 
-	var P ed25519.Ge_p3
-	x25519GeScalarmultBase(&P, ctx.privateKey[:])
+	var p ed25519.Ge_p3
+	x25519GeScalarmultBase(&p, ctx.privateKey[:])
 
 	// 创建 SHA-512 哈希对象
 	hasher := sha512.New()
@@ -1013,7 +904,9 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 		scalarAdd(&passwordScalar, &tmp)
 
 		scalarDouble(&order)
+		log.Printf("order:%+v\r\n", order)
 		scalarCmov(&tmp, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&2), 2))
+
 		scalarAdd(&passwordScalar, &tmp)
 
 		scalarDouble(&order)
@@ -1025,6 +918,7 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 
 	var mask ed25519.Ge_p3
 
+	fmt.Printf("ctx.passwordScalar:%+v\r\n", ctx.passwordScalar)
 	var precompTable []byte
 	if ctx.myRole == 0 {
 		precompTable = kSpakeMSmallPrecomp
@@ -1038,7 +932,7 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	var mask_cached ed25519.Ge_cached
 	ed25519.X25519_ge_p3_to_cached(&mask_cached, &mask)
 	var Pstar ed25519.Ge_p1p1
-	ed25519.X25519_ge_add(&Pstar, &P, &mask_cached)
+	ed25519.X25519_ge_add(&Pstar, &p, &mask_cached)
 
 	// Encode P*
 	var Pstar_proj ed25519.Ge_p2
