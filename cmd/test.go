@@ -34,8 +34,6 @@ func hexify(in []byte) string {
 }
 
 func main() {
-	//var output [300]byte
-	//var bytes [64]uint8
 
 	alice, err := spake2.SPAKE2_CTX_new(0, []byte(kClientName), []byte(kServerName))
 	bob, err := spake2.SPAKE2_CTX_new(1, []byte(kServerName), []byte(kClientName))

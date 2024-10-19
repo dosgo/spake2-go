@@ -8,6 +8,8 @@ import (
 	"spake2-go/ed25519"
 
 	"unsafe"
+
+	"crypto/rand"
 )
 
 // Low-level intrinsic operations
@@ -890,12 +892,8 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	}
 
 	privateTmp := make([]byte, 64)
-	privateTmp[0] = 78
-	privateTmp[1] = 98
-	privateTmp[31] = 9
-	for i := 0; i < 64; i++ {
-		//	privateTmp[i] = uint8(mrand.Intn(32767))
-	}
+
+	rand.Read(privateTmp)
 
 	privateTmp = x25519ScReduce(privateTmp)
 	// Multiply by the cofactor (eight) so that we'll clear it when operating on
