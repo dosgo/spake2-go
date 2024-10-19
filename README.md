@@ -1,7 +1,7 @@
 # spake2-go
 
 
-
+<pre>
 func main() {
 	alice, err := spake2.SPAKE2_CTX_new(0, []byte(kClientName), []byte(kServerName))
 	bob, err := spake2.SPAKE2_CTX_new(1, []byte(kServerName), []byte(kClientName))
@@ -38,3 +38,4 @@ func main() {
 	log.Printf("BOB(%d)  <== %v\n", bKeyLen, bKey)
 	return
 }
+</pre>
