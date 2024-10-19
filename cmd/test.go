@@ -8,8 +8,8 @@ import (
 // 假设有一个名为 spake2 的包提供了 SPAKE2 协议的实现
 
 const (
-	kClientName = "adb pair client"
-	kServerName = "adb pair server"
+	kClientName = "adb pair client\x00"
+	kServerName = "adb pair server\x00"
 )
 
 var SPAKE2_MAX_MSG_SIZE int = 32
@@ -66,8 +66,6 @@ func main() {
 	var bKeyLen uint32 = uint32(SPAKE2_MAX_KEY_SIZE)
 	var bKey = make([]byte, uint32(SPAKE2_MAX_KEY_SIZE))
 	status1, _ = bob.SPAKE2_process_msg(bKey, bKeyLen, aMessage)
-	log.Printf("status:%d err:%v\r\n", status, err)
-	log.Printf("status1:%d\r\n", status1)
 	if status < 1 {
 		log.Printf("Unable to process their public key")
 		return

@@ -833,12 +833,6 @@ func bytesToUint32(bytes []byte) uint32 {
 	}
 	return uint32(bytes[0]) | uint32(bytes[1])<<8 | uint32(bytes[2])<<16 | uint32(bytes[3])<<24
 }
-func bytesToUint64(bytes []byte) uint64 {
-	if len(bytes) < 4 {
-		return 0
-	}
-	return uint64(uint32(bytes[0]) | uint32(bytes[1])<<8 | uint32(bytes[2])<<16 | uint32(bytes[3])<<24)
-}
 
 func scalarAdd(dest, src *scalar) {
 	var carry uint32
@@ -856,17 +850,6 @@ func scalarAdd(dest, src *scalar) {
 	}
 }
 
-/*
-	func  scalar_add(scalar *dest,  scalar *src) {
-		var carry uint32
-
-		for  i = 0; i < 8; i++ {
-		  uint64_t tmp = ((uint64_t)dest->words[i] + src->words[i]) + carry;
-		  dest->words[i] = (uint32_t)tmp;
-		  carry = (uint32_t)(tmp >> 32);
-		}
-	  }
-*/
 type spake2Ctx struct {
 	myRole int
 	myName []uint8
@@ -994,7 +977,7 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	return 1
 }
 
-func updateWithLengthPrefixNew(sha hash.Hash, data []uint8) {
+func updateWithLengthPrefix(sha hash.Hash, data []uint8) {
 	lenLE := make([]uint8, 8)
 	binary.LittleEndian.PutUint64(lenLE, uint64(len(data)))
 	sha.Write(lenLE)
@@ -1039,26 +1022,24 @@ func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, th
 	hasher := sha512.New()
 	if ctx.myRole == 0 { // Assuming 0 is spake2_role_alice
 
-		//log.Printf("alice:%s|%s|%+v|%+v\r\n", ctx.myName, ctx.theirName, ctx.myMsg, theirMsg)
-		updateWithLengthPrefixNew(hasher, ctx.myName)
-		updateWithLengthPrefixNew(hasher, ctx.theirName)
-		updateWithLengthPrefixNew(hasher, ctx.myMsg)
-		updateWithLengthPrefixNew(hasher, theirMsg)
+		updateWithLengthPrefix(hasher, ctx.myName)
+		updateWithLengthPrefix(hasher, ctx.theirName)
+		updateWithLengthPrefix(hasher, ctx.myMsg)
+		updateWithLengthPrefix(hasher, theirMsg)
 
 	} else {
 		//log.Printf("bob:%s|%s|%+v|%+v\r\n", ctx.theirName, ctx.myName, theirMsg, ctx.myMsg)
-		updateWithLengthPrefixNew(hasher, ctx.theirName)
-		updateWithLengthPrefixNew(hasher, ctx.myName)
-		updateWithLengthPrefixNew(hasher, theirMsg)
-		updateWithLengthPrefixNew(hasher, ctx.myMsg)
+		updateWithLengthPrefix(hasher, ctx.theirName)
+		updateWithLengthPrefix(hasher, ctx.myName)
+		updateWithLengthPrefix(hasher, theirMsg)
+		updateWithLengthPrefix(hasher, ctx.myMsg)
 
 	}
 
-	updateWithLengthPrefixNew(hasher, dhSharedEncoded[:])
-	updateWithLengthPrefixNew(hasher, ctx.passwordHash[:])
+	updateWithLengthPrefix(hasher, dhSharedEncoded)
+	updateWithLengthPrefix(hasher, ctx.passwordHash[:])
 
 	key := hasher.Sum(nil)
-
 	toCopy := maxOutKeyLen
 	if toCopy > uint32(len(key)) {
 		toCopy = uint32(len(key))

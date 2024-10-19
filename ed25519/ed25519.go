@@ -94,29 +94,6 @@ func convertToByte(arr [32]uint32) []byte {
 	}
 	return result
 }
-func convertToUint32(bytes []byte) []uint32 {
-	if len(bytes)%4 != 0 {
-		// 如果字节切片长度不是 4 的倍数，返回 nil 或进行适当处理
-		return nil
-	}
-	var result []uint32
-	for i := 0; i < len(bytes); i += 4 {
-		result = append(result, uint32(bytes[i])|uint32(bytes[i+1])<<8|uint32(bytes[i+2])<<16|uint32(bytes[i+3])<<24)
-	}
-	return result
-}
-
-func convertToUint32v1(bytes []byte) []uint32 {
-	if len(bytes)%4 != 0 {
-		// 如果字节切片长度不是 4 的倍数，返回 nil 或进行适当处理
-		return nil
-	}
-	var result []uint32
-	for i := 0; i < len(bytes); i += 4 {
-		result = append(result, uint32(bytes[i])<<24|uint32(bytes[i+1])<<16|uint32(bytes[i+2])<<8|uint32(bytes[i+3]))
-	}
-	return result
-}
 
 func convertToUint32v2(bytes []byte) []uint32 {
 	var result []uint32
