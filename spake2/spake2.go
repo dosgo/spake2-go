@@ -4,7 +4,6 @@ import (
 	"crypto/sha512"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"hash"
 	"log"
 	"spake2-go/ed25519"
@@ -176,10 +175,10 @@ func x25519GeScalarmultSmallPrecomp(
 		var bit uint8
 		for j = 0; j < 4; j++ {
 			bit = 1 & (a[(8*j)+(i/8)] >> (i & 7))
-
+			//fmt.Printf("bit:%d a:%d\r\n", bit, a[(8*j)+(i/8)])
 			index |= int8(bit << j)
 		}
-
+		//	fmt.Printf("index:%d\r\n", index)
 		var e ed25519.Ge_precomp
 		ed25519.Ge_precomp_0(&e)
 
@@ -199,9 +198,7 @@ func x25519GeScalarmultSmallPrecomp(
 		ed25519.Ge_madd(&r, h, &e)
 
 		ed25519.X25519_ge_p1p1_to_p3(h, &r)
-		if i == 32 {
-			fmt.Printf("hhhhhhhhhhhh:%+v\r\n", h.T)
-		}
+
 	}
 }
 
@@ -856,7 +853,7 @@ func scalarAdd(dest, src *scalar) {
 		data32Byte := uint32ToBytes(uint32(tmp))
 		//dest.words[i] = uint32(tmp)
 		copy(dest.bytes[i*4:], data32Byte)
-		carry = uint32(tmp) >> 32
+		carry = uint32(uint64(tmp) >> 32)
 	}
 }
 
@@ -958,10 +955,12 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 		scalarDouble(&order)
 		var tmp1 scalar
 		scalarCmov(&tmp1, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&2), 2))
+
 		scalarAdd(&passwordScalar, &tmp1)
 		scalarDouble(&order)
 		var tmp2 scalar
 		scalarCmov(&tmp2, &order, constantTimeEq(uint32(passwordScalar.bytes[0]&4), 4))
+
 		//log.Printf("password_scalar:%+v\r\n", passwordScalar)
 		scalarAdd(&passwordScalar, &tmp2)
 	}
@@ -978,19 +977,20 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	}
 
 	x25519GeScalarmultSmallPrecomp(&mask, ctx.passwordScalar[:], precompTable)
-	log.Printf("mask t1:%+v\r\n", mask)
-	log.Printf(" ctx.passwordScalar:%+v\r\n", ctx.passwordScalar)
+
 	// P* = P + mask.
 	var mask_cached ed25519.Ge_cached
 	ed25519.X25519_ge_p3_to_cached(&mask_cached, &mask)
+
 	var Pstar ed25519.Ge_p1p1
 	ed25519.X25519_ge_add(&Pstar, &p, &mask_cached)
 
 	// Encode P*
 	var Pstar_proj ed25519.Ge_p2
 	ed25519.X25519_ge_p1p1_to_p2(&Pstar_proj, &Pstar)
-
+	log.Printf("Pstar_proj:%+v\r\n", Pstar_proj)
 	ed25519.X25519_ge_tobytes(&ctx.myMsg, &Pstar_proj)
+	log.Printf("ctx.myMsg:%+v\r\n", ctx.myMsg)
 	copy(out, ctx.myMsg)
 	ctx.state = 1
 

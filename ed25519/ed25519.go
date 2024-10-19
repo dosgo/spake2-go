@@ -2,6 +2,8 @@ package ed25519
 
 import (
 	"bytes"
+	"log"
+	"math/big"
 )
 
 const FE_NUM_LIMBS = 10
@@ -138,12 +140,33 @@ func fe_neg(h *Fe_loose, f *Fe) {
 	fiat25519Opp(&h.v, &f.v)
 }
 
-func Fe_cmov(f *Fe_loose, g *Fe_loose, b uint32) {
+func Fe_cmov22(f *Fe_loose, g *Fe_loose, b uint32) {
 	b = 0 - b
 	for i := 0; i < FE_NUM_LIMBS; i++ {
 		x := f.v[i] ^ g.v[i]
 		x &= b
 		f.v[i] ^= x
+	}
+}
+
+func Fe_cmovii(f, g *Fe_loose, b uint32) {
+	b = 0 - b
+	for i := range f.v {
+		x := f.v[i] ^ g.v[i]
+		x &= b
+		f.v[i] ^= x
+	}
+}
+
+func Fe_cmov(f, g *Fe_loose, b uint32) {
+	b = 0 - b
+	for i := range f.v {
+		fBig := big.NewInt(int64(f.v[i]))
+		gBig := big.NewInt(int64(g.v[i]))
+		x := new(big.Int).Xor(fBig, gBig)
+		temp := new(big.Int).SetUint64(uint64(b))
+		x.And(x, temp)
+		f.v[i] = uint32(new(big.Int).Xor(fBig, x).Uint64())
 	}
 }
 
@@ -160,7 +183,9 @@ func fe_loose_invert(out *Fe, z *Fe_loose) {
 	var i int
 
 	fe_sq_tl(&t0, z)
+
 	fe_sq_tt(&t1, &t0)
+
 	for i = 1; i < 2; i++ {
 		fe_sq_tt(&t1, &t1)
 	}
@@ -421,11 +446,15 @@ func Ge_p2_dbl(r *Ge_p1p1, p *Ge_p2) {
 
 func X25519_ge_tobytes(s *[]byte, h *Ge_p2) {
 	var recip, x, y Fe
+
 	fe_invert(&recip, &h.Z)
+
 	Fe_mul_ttt(&x, &h.X, &recip)
 	Fe_mul_ttt(&y, &h.Y, &recip)
 
+	log.Printf("X25519_ge_tobytes yyy:%+v\r\n", y)
 	Fe_tobytes(s, &y)
+	log.Printf("X25519_ge_tobytes ss:%+v\r\n", s)
 	(*s)[31] ^= byte(fe_isnegative(&x) << 7)
 }
 
