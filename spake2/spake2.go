@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"hash"
-	"log"
 	"spake2-go/ed25519"
 
 	"unsafe"
@@ -988,9 +987,7 @@ func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	// Encode P*
 	var Pstar_proj ed25519.Ge_p2
 	ed25519.X25519_ge_p1p1_to_p2(&Pstar_proj, &Pstar)
-	log.Printf("Pstar_proj:%+v\r\n", Pstar_proj)
 	ed25519.X25519_ge_tobytes(&ctx.myMsg, &Pstar_proj)
-	log.Printf("ctx.myMsg:%+v\r\n", ctx.myMsg)
 	copy(out, ctx.myMsg)
 	ctx.state = 1
 

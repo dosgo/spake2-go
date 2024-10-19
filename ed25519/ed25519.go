@@ -2,8 +2,8 @@ package ed25519
 
 import (
 	"bytes"
-	"log"
 	"math/big"
+	"spake2-go/curve25519"
 	"spake2-go/curve25519go"
 )
 
@@ -81,7 +81,17 @@ func Fe_frombytes(h *Fe, s []byte) {
 }
 
 func Fe_tobytes(s *[]byte, f *Fe) {
-	curve25519go.Fiat_25519_to_bytes(s, &f.v)
+	var out1 [32]uint32
+	curve25519.Fiat_25519_to_bytes(&out1, &f.v)
+	*s = convertToByte(out1)
+}
+
+func convertToByte(arr [32]uint32) []byte {
+	var result []byte
+	for _, v := range arr {
+		result = append(result, uint8(v))
+	}
+	return result
 }
 
 func Fe_add(h *Fe_loose, f *Fe, g *Fe) {
@@ -453,9 +463,7 @@ func X25519_ge_tobytes(s *[]byte, h *Ge_p2) {
 	Fe_mul_ttt(&x, &h.X, &recip)
 	Fe_mul_ttt(&y, &h.Y, &recip)
 
-	log.Printf("X25519_ge_tobytes yyy:%+v\r\n", y)
 	Fe_tobytes(s, &y)
-	log.Printf("X25519_ge_tobytes ss:%+v\r\n", s)
 	(*s)[31] ^= byte(fe_isnegative(&x) << 7)
 }
 
