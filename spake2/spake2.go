@@ -853,7 +853,7 @@ func scalarAdd(dest, src *scalar) {
 	}
 }
 
-type spake2Ctx struct {
+type Spake2Ctx struct {
 	myRole int
 	myName []uint8
 	//myNameLen                 uint32
@@ -867,8 +867,8 @@ type spake2Ctx struct {
 	disablePasswordScalarHack bool
 }
 
-func SPAKE2_CTX_new(myRole int, myName []uint8, theirName []uint8) (*spake2Ctx, error) {
-	ctx := &spake2Ctx{}
+func SPAKE2_CTX_new(myRole int, myName []uint8, theirName []uint8) (*Spake2Ctx, error) {
+	ctx := &Spake2Ctx{}
 	ctx.myRole = myRole
 	//ctx.myNameLen = uint32(len(myName))
 	ctx.myName = myName
@@ -878,12 +878,12 @@ func SPAKE2_CTX_new(myRole int, myName []uint8, theirName []uint8) (*spake2Ctx, 
 	return ctx, nil
 }
 
-func (ctx *spake2Ctx) SPAKE2_CTX_free() {
+func (ctx *Spake2Ctx) SPAKE2_CTX_free() {
 	ctx.myName = nil
 	ctx.theirName = nil
 }
 
-func (ctx *spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password []byte) uint32 {
+func (ctx *Spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password []byte) uint32 {
 	if ctx.state != 0 {
 		return 0
 	}
@@ -983,7 +983,7 @@ func updateWithLengthPrefix(sha hash.Hash, data []uint8) {
 	sha.Write(data)
 }
 
-func (ctx *spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, theirMsg []uint8) (uint32, error) {
+func (ctx *Spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, theirMsg []uint8) (uint32, error) {
 	if ctx.state != 1 || len(theirMsg) != 32 { // Assuming 1 is spake2_state_msg_generated
 		return 0, errors.New("invalid state or message length")
 	}
