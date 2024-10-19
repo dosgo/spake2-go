@@ -13,11 +13,8 @@ func main() {
 	var bMessage = make([]byte, uint32(SPAKE2_MAX_MSG_SIZE))
 	var aMsgSize uint32 = uint32(SPAKE2_MAX_MSG_SIZE)
 	var bMsgSize uint32 = uint32(SPAKE2_MAX_MSG_SIZE)
-
 	status := alice.SPAKE2_generate_msg(aMessage, aMsgSize, kPassword)
-
 	status1 := bob.SPAKE2_generate_msg(bMessage, bMsgSize, kPassword)
-
 	log.Printf("ALICE(%d) ==>:%+v\r\n", aMsgSize, aMessage)
 	log.Printf("BOB(%d)   ==>:%+v\r\n", bMsgSize, bMessage)
 	if status < 1 || status1 < 1 || aMsgSize == 0 || bMsgSize == 0 {
