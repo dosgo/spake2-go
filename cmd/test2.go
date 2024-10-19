@@ -4,20 +4,19 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"spake2-go/ed25519"
 )
 
 func main() {
 	//var output [300]byte
 	//var bytes [64]uint8
-	xx := ed25519.Fiat25519FieldElement{0x01, 0x02}
-	arg1 := ed25519.Fiat25519FieldElement{15540839, 8128613, 35539908, 18003200, 66970125, 13484806, 53323836, 19064896, 18909259, 33172296}
+	xx := [10]uint32{0x01, 0x02}
+	arg1 := [10]uint32{15540839, 8128613, 35539908, 18003200, 66970125, 13484806, 53323836, 19064896, 18909259, 33172296}
 
 	out := fiat25519CarrySquare(xx, &arg1)
 	fmt.Printf("out:%v\r\n", out)
 	return
 }
-func fiat25519CarrySquare(out1 ed25519.Fiat25519FieldElement, arg1 *ed25519.Fiat25519FieldElement) ed25519.Fiat25519FieldElement {
+func fiat25519CarrySquare(out1 [10]uint32, arg1 *[10]uint32) [10]uint32 {
 	var (
 		x1, x2, x3, x4, x5, x6, x7, x8, x9, x10,
 		x11, x12, x13, x14, x15, x16, x17, x18, x19, x20,

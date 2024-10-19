@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"log"
 	"math/big"
+	"spake2-go/curve25519go"
 )
 
 const FE_NUM_LIMBS = 10
 
 type Fe struct {
-	v Fiat25519FieldElement
+	v [FE_NUM_LIMBS]uint32
 }
 
 type Fe_loose struct {
-	v Fiat25519FieldElement
+	v [FE_NUM_LIMBS]uint32
 }
 
 var d = Fe{
@@ -70,7 +71,7 @@ func fe_copy_lt(h *Fe_loose, f *Fe) {
 func Fe_frombytes_strict(h *Fe, s []byte) {
 	// |fiat_25519_from_bytes| requires the top-most bit be clear.
 
-	fiat25519FromBytes(&h.v, s)
+	curve25519go.Fiat_25519_from_bytes(&h.v, s)
 }
 func Fe_frombytes(h *Fe, s []byte) {
 	var s_copy [32]byte
@@ -80,24 +81,24 @@ func Fe_frombytes(h *Fe, s []byte) {
 }
 
 func Fe_tobytes(s *[]byte, f *Fe) {
-	fiat25519ToBytes(s, &f.v)
+	curve25519go.Fiat_25519_to_bytes(s, &f.v)
 }
 
 func Fe_add(h *Fe_loose, f *Fe, g *Fe) {
-	fiat25519Add(&h.v, &f.v, &g.v)
+	curve25519go.Fiat_25519_add(&h.v, &f.v, &g.v)
 }
 
 func Fe_sub(h *Fe_loose, f *Fe, g *Fe) {
-	fiat25519Sub(&h.v, &f.v, &g.v)
+	curve25519go.Fiat_25519_sub(&h.v, &f.v, &g.v)
 }
 
 func Fe_carry(h *Fe, f *Fe_loose) {
-	fiat25519Carry(&h.v, &f.v)
+	curve25519go.Fiat_25519_carry(&h.v, &f.v)
 }
 
-func Fe_mul_impl(out Fiat25519FieldElement, in1 Fiat25519FieldElement, in2 Fiat25519FieldElement) Fiat25519FieldElement {
+func Fe_mul_impl(out [10]uint32, in1 [10]uint32, in2 [10]uint32) [10]uint32 {
 
-	return fiat25519CarryMul(out, in1, in2)
+	return curve25519go.Fiat_25519_carry_mul(out, in1, in2)
 
 }
 
@@ -129,15 +130,15 @@ func fe_mul_tll(h *Fe, f *Fe_loose, g *Fe_loose) {
 }
 
 func fe_sq_tl(h *Fe, f *Fe_loose) {
-	h.v = fiat25519CarrySquare(h.v, &f.v)
+	h.v = curve25519go.Fiat_25519_carry_square(h.v, &f.v)
 }
 
 func fe_sq_tt(h *Fe, f *Fe) {
-	h.v = fiat25519CarrySquare(h.v, &f.v)
+	h.v = curve25519go.Fiat_25519_carry_square(h.v, &f.v)
 }
 
 func fe_neg(h *Fe_loose, f *Fe) {
-	fiat25519Opp(&h.v, &f.v)
+	curve25519go.Fiat_25519_opp(&h.v, &f.v)
 }
 
 func Fe_cmov22(f *Fe_loose, g *Fe_loose, b uint32) {

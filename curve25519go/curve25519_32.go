@@ -1,57 +1,110 @@
-package ed25519
+package curve25519go
 
 import (
+	"fmt"
 	"math/big"
 )
-
-type fiat25519Uint1 uint8
-type fiat25519Int1 int8
-
-type Fiat25519FieldElement [10]uint32
 
 func fiat25519ValueBarrierU32(a uint32) uint32 {
 	return a // No inline assembly equivalent in Go
 }
 
-func fiat25519AddCarryXU26(out1 *uint32, out2 *fiat25519Uint1, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
+func fiat25519AddCarryXU26(out1 *uint32, out2 *uint8, arg1 uint8, arg2 uint32, arg3 uint32) {
 	x1 := uint32(arg1) + arg2 + arg3
 	*out1 = x1 & 0x3ffffff
-	*out2 = fiat25519Uint1(x1 >> 26)
+	*out2 = uint8(x1 >> 26)
 }
 
-func fiat25519SubBorrowXU26(out1 *uint32, out2 *fiat25519Uint1, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
+func fiat25519SubBorrowXU26bak(out1 *uint32, out2 *uint8, arg1 uint8, arg2 uint32, arg3 uint32) {
 	x1 := int32(arg2) - int32(arg1) - int32(arg3)
 	*out1 = uint32(x1 & 0x3ffffff)
-	*out2 = fiat25519Uint1(0 - (x1 >> 26))
+	*out2 = uint8(0 - (x1 >> 26))
+}
+func fiat25519SubBorrowXU26lllll(out1 *uint32, out2 *uint8, arg1 uint8, arg2 uint32, arg3 uint32) {
+	var x1 int32
+	var x2 uint8
+	var x3 uint32
+	x1 = int32((arg2 - uint32(arg1)) - arg3)
+	x2 = (uint8)(x1 >> 26)
+	x3 = (uint32(x1) & uint32(0x3ffffff))
+	*out1 = x3
+	*out2 = uint8((0x0) - x2)
 }
 
-func fiat25519AddCarryXU25(out1 *uint32, out2 *fiat25519Uint1, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
+func fiat_25519_subborrowx_u26(out1 *uint32, out2 *uint8, arg1 uint8, arg2, arg3 uint32) {
+	x1 := (int32(arg2) - int32(arg1)) - int32(arg3)
+	x2 := int8(x1 >> 26)
+	x3 := uint32(x1 & 0x3ffffff)
+	*out1 = x3
+	*out2 = uint8(^x2)
+}
+
+func fiat_25519_addcarryx_u25(out1 *uint32, out2 *uint8, arg1 uint8, arg2 uint32, arg3 uint32) {
 	x1 := uint32(arg1) + arg2 + arg3
 	*out1 = x1 & 0x1ffffff
-	*out2 = fiat25519Uint1(x1 >> 25)
+	*out2 = uint8(x1 >> 25)
 }
 
-func fiat25519SubBorrowXU25(out1 *uint32, out2 *fiat25519Uint1, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
+func fiat_25519_subborrowx_u25(out1 *uint32, out2 *uint8, arg1 uint8, arg2 uint32, arg3 uint32) {
 	var x1 int32
-	var x2 fiat25519Int1
+	var x2 int8
 	var x3 uint32
 	x1 = (int32(arg2-uint32(arg1)) - int32(arg3))
-	x2 = (fiat25519Int1)(x1 >> 25)
+	x2 = (int8)(x1 >> 25)
 	x3 = uint32(uint32(x1) & uint32(0x1ffffff))
 	*out1 = x3
-	*out2 = (fiat25519Uint1)(0x0 - x2)
+	*out2 = (uint8)(0x0 - x2)
 }
 
-func fiat25519CmovznzU32(out1 *uint32, arg1 fiat25519Uint1, arg2 uint32, arg3 uint32) {
-	x1 := fiat25519Uint1(0)
+func fiat25519CmovznzU32src(out1 *uint32, arg1 uint8, arg2 uint32, arg3 uint32) {
+	x1 := uint8(0)
 	if arg1 != 0 {
 		x1 = 1
 	}
-	x2 := uint32(0 - x1)
+	x2 := uint32(0-x1) & (0xffffffff)
 	*out1 = (fiat25519ValueBarrierU32(x2) & arg3) | (fiat25519ValueBarrierU32(^x2) & arg2)
 }
 
-func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1, arg2 Fiat25519FieldElement) Fiat25519FieldElement {
+func fiat25519CmovznzU32(out1 *uint32, arg1 uint8, arg2, arg3 uint32) {
+	x1 := !(!bool(arg1 != 0))
+	var x2 uint32
+	if x1 {
+		x2 = 0xffffffff
+	} else {
+		x2 = 0
+	}
+	x3 := ((x2) & arg3) | ((^x2) & arg2)
+	*out1 = x3
+}
+
+func fiat25519CmovznzU32bakNew(out1 *uint32, arg1 uint8, arg2, arg3 uint32) {
+	var x1 bool
+	var _x1 uint = 0
+	var x2 uint32
+	var x3 uint32
+	x1 = !(arg1 != 0)
+	if x1 {
+		_x1 = 1
+	}
+	x2 = uint32((0x0 - _x1) & (0xffffffff))
+	x3 = ((x2) & arg3) | ((^x2) & arg2)
+	*out1 = x3
+}
+func fiat25519CmovznzU32dddd(out1 *uint32, arg1 uint8, arg2, arg3 uint32) {
+	var x1 bool
+	var _x1 uint = 0
+	var x2 uint32
+	var x3 uint32
+	x1 = !(arg1 != 0)
+	if x1 {
+		_x1 = 1
+	}
+	x2 = uint32((0x0 - _x1) & (0xffffffff))
+	x3 = ((x2 & arg3) | ((^x2) & arg2))
+	*out1 = x3
+}
+
+func Fiat_25519_carry_mul(out1 [10]uint32, arg1, arg2 [10]uint32) [10]uint32 {
 	var x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41, x42, x43, x44, x45, x46, x47, x48, x49, x50, x51, x52, x53, x54, x55, x56, x57, x58, x59, x60, x61, x62, x63, x64, x65, x66, x67, x68, x69, x70, x71, x72, x73, x74, x75, x76, x77, x78, x79, x80, x81, x82, x83, x84, x85, x86, x87, x88, x89, x90, x91, x92, x93, x94, x95, x96, x97, x98, x99, x100, x101, x102, x103, x104, x105, x106, x107, x108, x109, x110, x111, x112, x113, x114, x115, x116, x117, x118, x119, x120, x121, x122, x123, x124, x125, x126, x127, x128, x129, x130, x131, x132, x133, x134, x135, x136, x137, x138, x139, x140, x141, x142, x143, x144, x145, x146, x147 big.Int
 
 	// 计算过程
@@ -350,7 +403,7 @@ func fiat25519CarryMul(out1 Fiat25519FieldElement, arg1, arg2 Fiat25519FieldElem
 	return out1
 }
 
-func fiat25519CarrySquare(out1 Fiat25519FieldElement, arg1 *Fiat25519FieldElement) Fiat25519FieldElement {
+func Fiat_25519_carry_square(out1 [10]uint32, arg1 *[10]uint32) [10]uint32 {
 	var (
 		x1, x2, x3, x4, x5, x6, x7, x8, x9, x10,
 		x11, x12, x13, x14, x15, x16, x17, x18, x19, x20,
@@ -680,7 +733,7 @@ func fiat25519CarrySquare(out1 Fiat25519FieldElement, arg1 *Fiat25519FieldElemen
 	return out1
 }
 
-func fiat25519CarrySquarebak(out1 Fiat25519FieldElement, arg1 *Fiat25519FieldElement) Fiat25519FieldElement {
+func fiat25519CarrySquarebak(out1 [10]uint32, arg1 *[10]uint32) [10]uint32 {
 	// 声明所有的局部变量
 	var (
 		x1, x2, x3, x4, x6, x7, x8, x9, x10, x12, x116, x13, x14, x15, x16, x17, x18, x76, x88, x91, x94, x97, x100, x103, x106, x109, x112, x115, x119, x120                                                                                                                                                                                                                                                                                                                 uint32
@@ -805,7 +858,7 @@ func fiat25519CarrySquarebak(out1 Fiat25519FieldElement, arg1 *Fiat25519FieldEle
 	x115 = uint32(x114 >> 26)
 	x116 = uint32(x114 & 0x3ffffff)
 	x117 = uint64((x115 + x88))
-	x118 := (fiat25519Uint1)(x117 >> 25) // 假设 fiat_25519_uint1 是一个自定义类型，这里直接使用 uint64
+	x118 := (uint8)(x117 >> 25) // 假设 fiat_25519_uint1 是一个自定义类型，这里直接使用 uint64
 	x119 = uint32(x117 & 0x1ffffff)
 	x120 = (uint32(x118) + x91)
 	out1[0] = x116
@@ -956,7 +1009,7 @@ func fiat25519CarrySquarebak(out1 Fiat25519FieldElement, arg1 *Fiat25519FieldEle
 		out1[9] = x[112]
 	}
 */
-func fiat25519Carrybak(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement) {
+func fiat25519Carrybak(out1 *[10]uint32, arg1 *[10]uint32) {
 	var x [23]uint32
 	x[1] = arg1[0]
 	x[2] = (x[1] >> 26) + arg1[1]
@@ -991,7 +1044,7 @@ func fiat25519Carrybak(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement)
 	out1[8] = x[21]
 	out1[9] = x[22]
 }
-func fiat25519Carry(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement) {
+func Fiat_25519_carry(out1 *[10]uint32, arg1 *[10]uint32) {
 	var x [23]*big.Int
 	x[1] = big.NewInt(int64(arg1[0]))
 	temp1 := new(big.Int).Rsh(x[1], 26)
@@ -1044,12 +1097,12 @@ func fiat25519Carry(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement) {
 	(*out1)[9] = uint32(x[22].Uint64())
 }
 
-func fiat25519Addbak(out1 *Fiat25519FieldElement, arg1, arg2 *Fiat25519FieldElement) {
+func fiat25519Addbak(out1 *[10]uint32, arg1, arg2 *[10]uint32) {
 	for i := 0; i < 10; i++ {
 		(*out1)[i] = (*arg1)[i] + (*arg2)[i]
 	}
 }
-func fiat25519Add(out1 *Fiat25519FieldElement, arg1, arg2 *Fiat25519FieldElement) {
+func Fiat_25519_add(out1 *[10]uint32, arg1, arg2 *[10]uint32) {
 	for i := 0; i < 10; i++ {
 		a := big.NewInt(int64((*arg1)[i]))
 		b := big.NewInt(int64((*arg2)[i]))
@@ -1058,7 +1111,7 @@ func fiat25519Add(out1 *Fiat25519FieldElement, arg1, arg2 *Fiat25519FieldElement
 	}
 }
 
-func fiat25519Sub(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement, arg2 *Fiat25519FieldElement) {
+func Fiat_25519_sub(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
 
 	var x1, x2, x3, x4, x5, x6, x7, x8, x9, x10 big.Int
 	//var x2 uint32
@@ -1120,7 +1173,7 @@ func fiat25519Sub(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement, arg2
 	out1[9] = uint32(x10.Uint64())
 }
 
-func fiat25519Opp(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement) {
+func Fiat_25519_opp(out1 *[10]uint32, arg1 *[10]uint32) {
 	const mask1 = 0x7fffffe
 	const mask2 = 0x3fffffe
 	for i := 0; i < 10; i++ {
@@ -1132,7 +1185,7 @@ func fiat25519Opp(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement) {
 	}
 }
 
-func fiat25519Selectznz(out1 *[10]uint32, arg1 fiat25519Uint1, arg2, arg3 *[10]uint32) {
+func fiat25519Selectznz(out1 *[10]uint32, arg1 uint8, arg2, arg3 *[10]uint32) {
 	for i := 0; i < 10; i++ {
 		if arg1 == 0 {
 			(*out1)[i] = (*arg2)[i]
@@ -1142,51 +1195,225 @@ func fiat25519Selectznz(out1 *[10]uint32, arg1 fiat25519Uint1, arg2, arg3 *[10]u
 	}
 }
 
-func Fiat25519ToBytes(out1 *[]byte, arg1 *Fiat25519FieldElement) {
+/*
+	func Fiat25519ToBytes(out1 *[32]uint8, arg1 *[10]uint32) {
+		var x1 uint32
+		var x2 fiat_25519_uint1
+		fiat_25519_subborrowx_u26(&x1, &x2, 0x0, (arg1[0]), 0x3ffffed)
+		var x3 uint32
+		var x4 fiat_25519_uint1
+		fiat_25519_subborrowx_u25(&x3, &x4, x2, (arg1[1]), 0x1ffffff)
+		var x5 uint32
+		var x6 fiat_25519_uint1
+		fiat_25519_subborrowx_u26(&x5, &x6, x4, (arg1[2]), 0x3ffffff)
+		var x7 uint32
+		var x8 fiat_25519_uint1
+		fiat_25519_subborrowx_u25(&x7, &x8, x6, (arg1[3]), 0x1ffffff)
+		var x9 uint32
+		var x10 fiat_25519_uint1
+		fiat_25519_subborrowx_u26(&x9, &x10, x8, (arg1[4]), 0x3ffffff)
+		var x11 uint32
+		var x12 fiat_25519_uint1
+		fiat_25519_subborrowx_u25(&x11, &x12, x10, (arg1[5]), 0x1ffffff)
+		var x13 uint32
+		var x14 fiat_25519_uint1
+		fiat_25519_subborrowx_u26(&x13, &x14, x12, (arg1[6]), 0x3ffffff)
+		var x15 uint32
+		var x16 fiat_25519_uint1
+		fiat_25519_subborrowx_u25(&x15, &x16, x14, (arg1[7]), 0x1ffffff)
+		var x17 uint32
+		var x18 fiat_25519_uint1
+		fiat_25519_subborrowx_u26(&x17, &x18, x16, (arg1[8]), 0x3ffffff)
+		var x19 uint32
+		var x20 fiat_25519_uint1
+		fiat_25519_subborrowx_u25(&x19, &x20, x18, (arg1[9]), 0x1ffffff)
+		var x21 uint32
+		fiat_25519_cmovznz_u32(&x21, x20, uint32(0x0), 0xffffffff)
+		var x22 uint32
+		var x23 fiat_25519_uint1
+		fiat_25519_addcarryx_u26(&x22, &x23, 0x0, x1, (x21 & 0x3ffffed))
+		var x24 uint32
+		var x25 fiat_25519_uint1
+		fiat_25519_addcarryx_u25(&x24, &x25, x23, x3, (x21 & 0x1ffffff))
+		var x26 uint32
+		var x27 fiat_25519_uint1
+		fiat_25519_addcarryx_u26(&x26, &x27, x25, x5, (x21 & 0x3ffffff))
+		var x28 uint32
+		var x29 fiat_25519_uint1
+		fiat_25519_addcarryx_u25(&x28, &x29, x27, x7, (x21 & 0x1ffffff))
+		var x30 uint32
+		var x31 fiat_25519_uint1
+		fiat_25519_addcarryx_u26(&x30, &x31, x29, x9, (x21 & 0x3ffffff))
+		var x32 uint32
+		var x33 fiat_25519_uint1
+		fiat_25519_addcarryx_u25(&x32, &x33, x31, x11, (x21 & 0x1ffffff))
+		var x34 uint32
+		var x35 fiat_25519_uint1
+		fiat_25519_addcarryx_u26(&x34, &x35, x33, x13, (x21 & 0x3ffffff))
+		var x36 uint32
+		var x37 fiat_25519_uint1
+		fiat_25519_addcarryx_u25(&x36, &x37, x35, x15, (x21 & 0x1ffffff))
+		var x38 uint32
+		var x39 fiat_25519_uint1
+		fiat_25519_addcarryx_u26(&x38, &x39, x37, x17, (x21 & 0x3ffffff))
+		var x40 uint32
+		var x41 fiat_25519_uint1
+		fiat_25519_addcarryx_u25(&x40, &x41, x39, x19, (x21 & 0x1ffffff))
+		var x42 uint32 = (x40 << 6)
+		var x43 uint32 = (x38 << 4)
+		var x44 uint32 = (x36 << 3)
+		var x45 uint32 = (x34 * uint32(0x2))
+		var x46 uint32 = (x30 << 6)
+		var x47 uint32 = (x28 << 5)
+		var x48 uint32 = (x26 << 3)
+		var x49 uint32 = (x24 << 2)
+		var x50 uint8 = (uint8(x22) & 0xff)
+		var x51 uint32 = (x22 >> 8)
+		var x52 uint8 = (uint8(x51) & 0xff)
+		var x53 uint32 = (x51 >> 8)
+		var x54 uint8 = (uint8(x53) & 0xff)
+		var x55 uint8 = uint8((x53 >> 8))
+		var x56 uint32 = (x49 + uint32(x55))
+		var x57 uint8 = (uint8(x56) & 0xff)
+		var x58 uint32 = (x56 >> 8)
+		var x59 uint8 = (uint8(x58) & 0xff)
+		var x60 uint32 = (x58 >> 8)
+		var x61 uint8 = (uint8(x60) & 0xff)
+		var x62 uint8 = uint8((x60 >> 8))
+		var x63 uint32 = (x48 + uint32(x62))
+		var x64 uint8 = (uint8(x63) & 0xff)
+		var x65 uint32 = (x63 >> 8)
+		var x66 uint8 = (uint8(x65) & 0xff)
+		var x67 uint32 = (x65 >> 8)
+		var x68 uint8 = (uint8(x67) & 0xff)
+		var x69 uint8 = uint8((x67 >> 8))
+		var x70 uint32 = (x47 + uint32(x69))
+		var x71 uint8 = (uint8(x70) & 0xff)
+		var x72 uint32 = (x70 >> 8)
+		var x73 uint8 = (uint8(x72) & 0xff)
+		var x74 uint32 = (x72 >> 8)
+		var x75 uint8 = (uint8(x74) & 0xff)
+		var x76 uint8 = uint8((x74 >> 8))
+		var x77 uint32 = (x46 + uint32(x76))
+		var x78 uint8 = (uint8(x77) & 0xff)
+		var x79 uint32 = (x77 >> 8)
+		var x80 uint8 = (uint8(x79) & 0xff)
+		var x81 uint32 = (x79 >> 8)
+		var x82 uint8 = (uint8(x81) & 0xff)
+		var x83 uint8 = uint8((x81 >> 8))
+		var x84 uint8 = (uint8(x32) & 0xff)
+		var x85 uint32 = (x32 >> 8)
+		var x86 uint8 = (uint8(x85) & 0xff)
+		var x87 uint32 = (x85 >> 8)
+		var x88 uint8 = (uint8(x87) & 0xff)
+		var x89 fiat_25519_uint1 = fiat_25519_uint1((x87 >> 8))
+		var x90 uint32 = (x45 + uint32(x89))
+		var x91 uint8 = (uint8(x90) & 0xff)
+		var x92 uint32 = (x90 >> 8)
+		var x93 uint8 = (uint8(x92) & 0xff)
+		var x94 uint32 = (x92 >> 8)
+		var x95 uint8 = (uint8(x94) & 0xff)
+		var x96 uint8 = uint8((x94 >> 8))
+		var x97 uint32 = (x44 + uint32(x96))
+		var x98 uint8 = (uint8(x97) & 0xff)
+		var x99 uint32 = (x97 >> 8)
+		var x100 uint8 = (uint8(x99) & 0xff)
+		var x101 uint32 = (x99 >> 8)
+		var x102 uint8 = (uint8(x101) & 0xff)
+		var x103 uint8 = uint8((x101 >> 8))
+		var x104 uint32 = (x43 + uint32(x103))
+		var x105 uint8 = (uint8(x104) & 0xff)
+		var x106 uint32 = (x104 >> 8)
+		var x107 uint8 = (uint8(x106) & 0xff)
+		var x108 uint32 = (x106 >> 8)
+		var x109 uint8 = (uint8(x108) & 0xff)
+		var x110 uint8 = uint8((x108 >> 8))
+		var x111 uint32 = (x42 + uint32(x110))
+		var x112 uint8 = (uint8(x111) & 0xff)
+		var x113 uint32 = (x111 >> 8)
+		var x114 uint8 = (uint8(x113) & 0xff)
+		var x115 uint32 = (x113 >> 8)
+		var x116 uint8 = (uint8(x115) & 0xff)
+		var x117 uint8 = uint8((x115 >> 8))
+		out1[0] = x50
+		out1[1] = x52
+		out1[2] = x54
+		out1[3] = x57
+		out1[4] = x59
+		out1[5] = x61
+		out1[6] = x64
+		out1[7] = x66
+		out1[8] = x68
+		out1[9] = x71
+		out1[10] = x73
+		out1[11] = x75
+		out1[12] = x78
+		out1[13] = x80
+		out1[14] = x82
+		out1[15] = x83
+		out1[16] = x84
+		out1[17] = x86
+		out1[18] = x88
+		out1[19] = x91
+		out1[20] = x93
+		out1[21] = x95
+		out1[22] = x98
+		out1[23] = x100
+		out1[24] = x102
+		out1[25] = x105
+		out1[26] = x107
+		out1[27] = x109
+		out1[28] = x112
+		out1[29] = x114
+		out1[30] = x116
+		out1[31] = x117
+	}
+*/
+func Fiat_25519_to_bytes(out1 *[]byte, arg1 *[10]uint32) {
 	var x1 uint32
-	var x2 fiat25519Uint1
+	var x2 uint8
 	var x3 uint32
-	var x4 fiat25519Uint1
+	var x4 uint8
 	var x5 uint32
-	var x6 fiat25519Uint1
+	var x6 uint8
 	var x7 uint32
-	var x8 fiat25519Uint1
+	var x8 uint8
 	var x9 uint32
-	var x10 fiat25519Uint1
+	var x10 uint8
 	var x11 uint32
-	var x12 fiat25519Uint1
+	var x12 uint8
 	var x13 uint32
-	var x14 fiat25519Uint1
+	var x14 uint8
 
 	var x15 uint32
-	var x16 fiat25519Uint1
+	var x16 uint8
 	var x17 uint32
-	var x18 fiat25519Uint1
+	var x18 uint8
 	var x19 uint32
-	var x20 fiat25519Uint1
+	var x20 uint8
 	var x21 uint32
 	var x22 uint32
 
-	var x23 fiat25519Uint1
+	var x23 uint8
 	var x24 uint32
-	var x25 fiat25519Uint1
+	var x25 uint8
 	var x26 uint32
-	var x27 fiat25519Uint1
+	var x27 uint8
 	var x28 uint32
-	var x29 fiat25519Uint1
+	var x29 uint8
 
 	var x30 uint32
-	var x31 fiat25519Uint1
+	var x31 uint8
 	var x32 uint32
-	var x33 fiat25519Uint1
+	var x33 uint8
 	var x34 uint32
-	var x35 fiat25519Uint1
+	var x35 uint8
 	var x36 uint32
-	var x37 fiat25519Uint1
+	var x37 uint8
 	var x38 uint32
-	var x39 fiat25519Uint1
+	var x39 uint8
 	var x40 uint32
-	var x41 fiat25519Uint1
+	var x41 uint8
 
 	var x42 uint32
 	var x43 uint32
@@ -1237,7 +1464,7 @@ func Fiat25519ToBytes(out1 *[]byte, arg1 *Fiat25519FieldElement) {
 	var x86 uint8
 	var x87 uint32
 	var x88 uint8
-	var x89 fiat25519Uint1
+	var x89 uint8
 
 	var x90 uint32
 	var x91 uint8
@@ -1268,27 +1495,34 @@ func Fiat25519ToBytes(out1 *[]byte, arg1 *Fiat25519FieldElement) {
 	var x116 uint8
 	var x117 uint8
 
-	fiat25519SubBorrowXU26(&x1, &x2, 0x0, (arg1[0]), uint32(0x3ffffed))
-	fiat25519SubBorrowXU25(&x3, &x4, x2, (arg1[1]), uint32(0x1ffffff))
-	fiat25519SubBorrowXU26(&x5, &x6, x4, (arg1[2]), uint32(0x3ffffff))
-	fiat25519SubBorrowXU25(&x7, &x8, x6, (arg1[3]), uint32(0x1ffffff))
-	fiat25519SubBorrowXU26(&x9, &x10, x8, (arg1[4]), uint32(0x3ffffff))
-	fiat25519SubBorrowXU25(&x11, &x12, x10, (arg1[5]), uint32(0x1ffffff))
-	fiat25519SubBorrowXU26(&x13, &x14, x12, (arg1[6]), uint32(0x3ffffff))
-	fiat25519SubBorrowXU25(&x15, &x16, x14, (arg1[7]), uint32(0x1ffffff))
-	fiat25519SubBorrowXU26(&x17, &x18, x16, (arg1[8]), uint32(0x3ffffff))
-	fiat25519SubBorrowXU25(&x19, &x20, x18, (arg1[9]), uint32(0x1ffffff))
+	fiat_25519_subborrowx_u26(&x1, &x2, 0x0, (arg1[0]), uint32(0x3ffffed))
+	fmt.Printf("x2:%d x1:%d\r\n", x2, x1)
+	fiat_25519_subborrowx_u25(&x3, &x4, x2, (arg1[1]), uint32(0x1ffffff))
+	fiat_25519_subborrowx_u26(&x5, &x6, x4, (arg1[2]), uint32(0x3ffffff))
+	fiat_25519_subborrowx_u25(&x7, &x8, x6, (arg1[3]), uint32(0x1ffffff))
+	fiat_25519_subborrowx_u26(&x9, &x10, x8, (arg1[4]), uint32(0x3ffffff))
+	fiat_25519_subborrowx_u25(&x11, &x12, x10, (arg1[5]), uint32(0x1ffffff))
+
+	fiat_25519_subborrowx_u26(&x13, &x14, x12, (arg1[6]), uint32(0x3ffffff))
+	fiat_25519_subborrowx_u25(&x15, &x16, x14, (arg1[7]), uint32(0x1ffffff))
+	fiat_25519_subborrowx_u26(&x17, &x18, x16, (arg1[8]), uint32(0x3ffffff))
+	fiat_25519_subborrowx_u25(&x19, &x20, x18, (arg1[9]), uint32(0x1ffffff))
 	fiat25519CmovznzU32(&x21, x20, 0x0, uint32(0xffffffff))
-	fiat25519SubBorrowXU26(&x22, &x23, 0x0, x1, (x21 & uint32(0x3ffffed)))
-	fiat25519AddCarryXU25(&x24, &x25, x23, x3, (x21 & uint32(0x1ffffff)))
-	fiat25519SubBorrowXU26(&x26, &x27, x25, x5, (x21 & uint32(0x3ffffff)))
-	fiat25519AddCarryXU25(&x28, &x29, x27, x7, (x21 & uint32(0x1ffffff)))
-	fiat25519SubBorrowXU26(&x30, &x31, x29, x9, (x21 & uint32(0x3ffffff)))
-	fiat25519AddCarryXU25(&x32, &x33, x31, x11, (x21 & uint32(0x1ffffff)))
-	fiat25519SubBorrowXU26(&x34, &x35, x33, x13, (x21 & uint32(0x3ffffff)))
-	fiat25519AddCarryXU25(&x36, &x37, x35, x15, (x21 & uint32(0x1ffffff)))
-	fiat25519SubBorrowXU26(&x38, &x39, x37, x17, (x21 & uint32(0x3ffffff)))
-	fiat25519AddCarryXU25(&x40, &x41, x39, x19, (x21 & uint32(0x1ffffff)))
+	fmt.Printf("x21:%d x20:%d uint32(0xffffffff):%d\r\n", x21, x20, uint32(0xffffffff))
+	fmt.Printf("x23:%d x1:%d x21:%d ddd:%d\r\n", x23, x1, x21, (int32(x21) & int32(0x3ffffed)))
+	fiat_25519_subborrowx_u26(&x22, &x23, 0x0, x1, (x21 & uint32(0x3ffffed)))
+	fmt.Printf("x22:%d\r\n", x22)
+	fiat_25519_addcarryx_u25(&x24, &x25, x23, x3, (x21 & uint32(0x1ffffff)))
+	fiat_25519_subborrowx_u26(&x26, &x27, x25, x5, (x21 & uint32(0x3ffffff)))
+	fiat_25519_addcarryx_u25(&x28, &x29, x27, x7, (x21 & uint32(0x1ffffff)))
+	fiat_25519_subborrowx_u26(&x30, &x31, x29, x9, (x21 & uint32(0x3ffffff)))
+	fiat_25519_addcarryx_u25(&x32, &x33, x31, x11, (x21 & uint32(0x1ffffff)))
+
+	fiat_25519_subborrowx_u26(&x34, &x35, x33, x13, (x21 & uint32(0x3ffffff)))
+	fiat_25519_addcarryx_u25(&x36, &x37, x35, x15, (x21 & uint32(0x1ffffff)))
+	fiat_25519_subborrowx_u26(&x38, &x39, x37, x17, (x21 & uint32(0x3ffffff)))
+	fiat_25519_addcarryx_u25(&x40, &x41, x39, x19, (x21 & uint32(0x1ffffff)))
+
 	x42 = (x40 << 6)
 	x43 = (x38 << 4)
 	x44 = (x36 << 3)
@@ -1298,6 +1532,7 @@ func Fiat25519ToBytes(out1 *[]byte, arg1 *Fiat25519FieldElement) {
 	x48 = (x26 << 3)
 	x49 = (x24 << 2)
 	x50 = uint8(x22 & 0xff)
+
 	x51 = (x22 >> 8)
 	x52 = uint8(x51 & 0xff)
 	x53 = (x51 >> 8)
@@ -1328,6 +1563,7 @@ func Fiat25519ToBytes(out1 *[]byte, arg1 *Fiat25519FieldElement) {
 	x78 = uint8(x77 & (0xff))
 	x79 = (x77 >> 8)
 	x80 = uint8(x79 & (0xff))
+
 	x81 = (x79 >> 8)
 	x82 = uint8(x81 & (0xff))
 	x83 = uint8(x81 >> 8)
@@ -1336,7 +1572,7 @@ func Fiat25519ToBytes(out1 *[]byte, arg1 *Fiat25519FieldElement) {
 	x86 = uint8(x85 & (0xff))
 	x87 = (x85 >> 8)
 	x88 = uint8(x87 & (0xff))
-	x89 = (fiat25519Uint1)(x87 >> 8)
+	x89 = (uint8)(x87 >> 8)
 	x90 = (x45 + uint32(x89))
 	x91 = uint8(x90 & (0xff))
 	x92 = (x90 >> 8)
@@ -1365,6 +1601,7 @@ func Fiat25519ToBytes(out1 *[]byte, arg1 *Fiat25519FieldElement) {
 	x115 = (x113 >> 8)
 	x116 = uint8(x115 & 0xff)
 	x117 = uint8(x115 >> 8)
+
 	(*out1)[0] = x50
 	(*out1)[1] = x52
 	(*out1)[2] = x54
@@ -1399,7 +1636,7 @@ func Fiat25519ToBytes(out1 *[]byte, arg1 *Fiat25519FieldElement) {
 	(*out1)[31] = x117
 }
 
-func fiat25519FromBytes(out1 *Fiat25519FieldElement, arg1 []byte) {
+func Fiat_25519_from_bytes(out1 *[10]uint32, arg1 []byte) {
 	var x [79]uint32
 	x[1] = uint32(arg1[31]) << 18
 	x[2] = uint32(arg1[30]) << 10
@@ -1493,23 +1730,23 @@ func fiat25519FromBytes(out1 *Fiat25519FieldElement, arg1 []byte) {
 	out1[9] = x[78]
 }
 
-func fiat25519Relax(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement) {
+func fiat25519Relax(out1 *[10]uint32, arg1 *[10]uint32) {
 	for i := 0; i < 10; i++ {
 		out1[i] = arg1[i]
 	}
 }
 
-func fiat25519CarryScmul121666(out1 *Fiat25519FieldElement, arg1 *Fiat25519FieldElement) {
+func fiat25519CarryScmul121666(out1 *[10]uint32, arg1 *[10]uint32) {
 
 	var (
 		x1, x2, x3, x4, x5, x6, x7, x8, x9, x10                                                                                                                   uint64
 		x11, x12, x13, x14, x15, x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30, x31, x32, x33, x34, x35, x36, x37, x38, x39, x40, x41 uint32
 	)
 
-	var x42 fiat25519Uint1
+	var x42 uint8
 	var x43 uint32
 	var x44 uint32
-	var x45 fiat25519Uint1
+	var x45 uint8
 	var x46 uint32
 	var x47 uint32
 
@@ -1554,10 +1791,10 @@ func fiat25519CarryScmul121666(out1 *Fiat25519FieldElement, arg1 *Fiat25519Field
 	x39 = (x37 & uint32(0x1ffffff))
 	x40 = (x38 * uint32(0x13))
 	x41 = (x12 + x40)
-	x42 = (fiat25519Uint1)(x41 >> 26)
+	x42 = (uint8)(x41 >> 26)
 	x43 = (x41 & uint32(0x3ffffff))
 	x44 = (uint32(x42) + x15)
-	x45 = (fiat25519Uint1)(x44 >> 25)
+	x45 = (uint8)(x44 >> 25)
 	x46 = (x44 & uint32(0x1ffffff))
 	x47 = (uint32(x45) + x18)
 	out1[0] = x43
