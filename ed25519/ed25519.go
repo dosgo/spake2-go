@@ -3,7 +3,8 @@ package ed25519
 import (
 	"bytes"
 	"math/big"
-	"spake2-go/curve25519"
+
+	"github.com/dosgo/spake2-go/curve25519"
 )
 
 const FE_NUM_LIMBS = 10

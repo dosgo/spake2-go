@@ -5,7 +5,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"hash"
-	"spake2-go/ed25519"
+
+	"github.com/dosgo/spake2-go/ed25519"
 
 	"unsafe"
 

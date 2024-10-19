@@ -2,7 +2,8 @@ package main
 
 import (
 	"log"
-	"spake2-go/spake2"
+
+	"github.com/dosgo/spake2-go/spake2"
 )
 
 // 假设有一个名为 spake2 的包提供了 SPAKE2 协议的实现
