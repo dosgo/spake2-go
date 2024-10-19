@@ -3,7 +3,6 @@
 
 
 func main() {
-
 	alice, err := spake2.SPAKE2_CTX_new(0, []byte(kClientName), []byte(kServerName))
 	bob, err := spake2.SPAKE2_CTX_new(1, []byte(kServerName), []byte(kClientName))
 	if alice == nil || bob == nil || err != nil {
@@ -40,6 +39,5 @@ func main() {
 
 	log.Printf("ALICE(%d) <== %v\n", aKeyLen, aKey)
 	log.Printf("BOB(%d)  <== %v\n", bKeyLen, bKey)
-
 	return
 }
