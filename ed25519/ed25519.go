@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"math/big"
 	"spake2-go/curve25519"
-	"spake2-go/curve25519go"
 )
 
 const FE_NUM_LIMBS = 10
@@ -70,8 +69,10 @@ func fe_copy_lt(h *Fe_loose, f *Fe) {
 
 func Fe_frombytes_strict(h *Fe, s []byte) {
 	// |fiat_25519_from_bytes| requires the top-most bit be clear.
-
-	curve25519go.Fiat_25519_from_bytes(&h.v, s)
+	suint32 := convertToUint32v2(s)
+	var arg1 [32]uint32
+	copy(arg1[:], suint32)
+	curve25519.Fiat_25519_from_bytes(&h.v, &arg1)
 }
 func Fe_frombytes(h *Fe, s []byte) {
 	var s_copy [32]byte
@@ -93,23 +94,53 @@ func convertToByte(arr [32]uint32) []byte {
 	}
 	return result
 }
+func convertToUint32(bytes []byte) []uint32 {
+	if len(bytes)%4 != 0 {
+		// 如果字节切片长度不是 4 的倍数，返回 nil 或进行适当处理
+		return nil
+	}
+	var result []uint32
+	for i := 0; i < len(bytes); i += 4 {
+		result = append(result, uint32(bytes[i])|uint32(bytes[i+1])<<8|uint32(bytes[i+2])<<16|uint32(bytes[i+3])<<24)
+	}
+	return result
+}
+
+func convertToUint32v1(bytes []byte) []uint32 {
+	if len(bytes)%4 != 0 {
+		// 如果字节切片长度不是 4 的倍数，返回 nil 或进行适当处理
+		return nil
+	}
+	var result []uint32
+	for i := 0; i < len(bytes); i += 4 {
+		result = append(result, uint32(bytes[i])<<24|uint32(bytes[i+1])<<16|uint32(bytes[i+2])<<8|uint32(bytes[i+3]))
+	}
+	return result
+}
+
+func convertToUint32v2(bytes []byte) []uint32 {
+	var result []uint32
+	for i := 0; i < len(bytes); i++ {
+		result = append(result, uint32(bytes[i]))
+	}
+	return result
+}
 
 func Fe_add(h *Fe_loose, f *Fe, g *Fe) {
-	curve25519go.Fiat_25519_add(&h.v, &f.v, &g.v)
+	curve25519.Fiat_25519_add(&h.v, &f.v, &g.v)
 }
 
 func Fe_sub(h *Fe_loose, f *Fe, g *Fe) {
-	curve25519go.Fiat_25519_sub(&h.v, &f.v, &g.v)
+	curve25519.Fiat_25519_sub(&h.v, &f.v, &g.v)
 }
 
 func Fe_carry(h *Fe, f *Fe_loose) {
-	curve25519go.Fiat_25519_carry(&h.v, &f.v)
+	curve25519.Fiat_25519_carry(&h.v, &f.v)
 }
 
 func Fe_mul_impl(out [10]uint32, in1 [10]uint32, in2 [10]uint32) [10]uint32 {
-
-	return curve25519go.Fiat_25519_carry_mul(out, in1, in2)
-
+	curve25519.Fiat_25519_carry_mul(&out, &in1, &in2)
+	return out
 }
 
 func Fe_mul_ltt(h *Fe_loose, f *Fe, g *Fe) {
@@ -140,15 +171,15 @@ func fe_mul_tll(h *Fe, f *Fe_loose, g *Fe_loose) {
 }
 
 func fe_sq_tl(h *Fe, f *Fe_loose) {
-	h.v = curve25519go.Fiat_25519_carry_square(h.v, &f.v)
+	curve25519.Fiat_25519_carry_square(&h.v, &f.v)
 }
 
 func fe_sq_tt(h *Fe, f *Fe) {
-	h.v = curve25519go.Fiat_25519_carry_square(h.v, &f.v)
+	curve25519.Fiat_25519_carry_square(&h.v, &f.v)
 }
 
 func fe_neg(h *Fe_loose, f *Fe) {
-	curve25519go.Fiat_25519_opp(&h.v, &f.v)
+	curve25519.Fiat_25519_opp(&h.v, &f.v)
 }
 
 func Fe_cmov22(f *Fe_loose, g *Fe_loose, b uint32) {

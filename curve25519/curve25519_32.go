@@ -135,7 +135,7 @@ func fiat_25519_cmovznz_u32(out1 *uint32, arg1 uint32, arg2 uint32, arg3 uint32)
  *   out1: [[0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333]]
  */
 /*inline*/
-func fiat_25519_carry_mul(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
+func Fiat_25519_carry_mul(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
 	var x1 uint64 = (uint64((arg1[9])) * uint64(((arg2[9]) * 0x26)))
 	var x2 uint64 = (uint64((arg1[9])) * uint64(((arg2[8]) * 0x13)))
 	var x3 uint64 = (uint64((arg1[9])) * uint64(((arg2[7]) * 0x26)))
@@ -306,7 +306,7 @@ func fiat_25519_carry_mul(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) 
  *   out1: [[0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333]]
  */
 /*inline*/
-func fiat_25519_carry_square(out1 *[10]uint32, arg1 *[10]uint32) {
+func Fiat_25519_carry_square(out1 *[10]uint32, arg1 *[10]uint32) {
 	var x1 uint32 = ((arg1[9]) * 0x13)
 	var x2 uint32 = (x1 * 0x2)
 	var x3 uint32 = ((arg1[9]) * 0x2)
@@ -450,7 +450,7 @@ func fiat_25519_carry_square(out1 *[10]uint32, arg1 *[10]uint32) {
  *   out1: [[0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333]]
  */
 /*inline*/
-func fiat_25519_carry(out1 *[10]uint32, arg1 *[10]uint32) {
+func Fiat_25519_carry(out1 *[10]uint32, arg1 *[10]uint32) {
 	var x1 uint32 = (arg1[0])
 	var x2 uint32 = ((x1 >> 26) + (arg1[1]))
 	var x3 uint32 = ((x2 >> 25) + (arg1[2]))
@@ -497,7 +497,7 @@ func fiat_25519_carry(out1 *[10]uint32, arg1 *[10]uint32) {
  *   out1: [[0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999]]
  */
 /*inline*/
-func fiat_25519_add(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
+func Fiat_25519_add(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
 	var x1 uint32 = ((arg1[0]) + (arg2[0]))
 	var x2 uint32 = ((arg1[1]) + (arg2[1]))
 	var x3 uint32 = ((arg1[2]) + (arg2[2]))
@@ -532,7 +532,7 @@ func fiat_25519_add(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
  *   out1: [[0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999]]
  */
 /*inline*/
-func fiat_25519_sub(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
+func Fiat_25519_sub(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
 	var x1 uint32 = ((0x7ffffda + (arg1[0])) - (arg2[0]))
 	var x2 uint32 = ((0x3fffffe + (arg1[1])) - (arg2[1]))
 	var x3 uint32 = ((0x7fffffe + (arg1[2])) - (arg2[2]))
@@ -566,7 +566,7 @@ func fiat_25519_sub(out1 *[10]uint32, arg1 *[10]uint32, arg2 *[10]uint32) {
  *   out1: [[0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999], [0x0 ~> 0xd333332], [0x0 ~> 0x6999999]]
  */
 /*inline*/
-func fiat_25519_opp(out1 *[10]uint32, arg1 *[10]uint32) {
+func Fiat_25519_opp(out1 *[10]uint32, arg1 *[10]uint32) {
 	var x1 uint32 = (0x7ffffda - (arg1[0]))
 	var x2 uint32 = (0x3fffffe - (arg1[1]))
 	var x3 uint32 = (0x7fffffe - (arg1[2]))
@@ -831,7 +831,7 @@ func Fiat_25519_to_bytes(out1 *[32]uint32, arg1 *[10]uint32) {
  *   out1: [[0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333], [0x0 ~> 0x4666666], [0x0 ~> 0x2333333]]
  */
 /*inline*/
-func fiat_25519_from_bytes(out1 *[10]uint32, arg1 *[32]uint32) {
+func Fiat_25519_from_bytes(out1 *[10]uint32, arg1 *[32]uint32) {
 	var x1 uint32 = ((arg1[31]) << 18)
 	var x2 uint32 = ((arg1[30]) << 10)
 	var x3 uint32 = ((arg1[29]) << 2)
