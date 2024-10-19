@@ -883,13 +883,9 @@ func (ctx *Spake2Ctx) SPAKE2_CTX_free() {
 	ctx.theirName = nil
 }
 
-func (ctx *Spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password []byte) uint32 {
+func (ctx *Spake2Ctx) SPAKE2_generate_msg(password []byte) ([]byte, error) {
 	if ctx.state != 0 {
-		return 0
-	}
-
-	if int(maxOutLen) < len(ctx.myMsg) {
-		return 0
+		return nil, errors.New("err")
 	}
 
 	privateTmp := make([]byte, 64)
@@ -970,10 +966,9 @@ func (ctx *Spake2Ctx) SPAKE2_generate_msg(out []byte, maxOutLen uint32, password
 	var Pstar_proj ed25519.Ge_p2
 	ed25519.X25519_ge_p1p1_to_p2(&Pstar_proj, &Pstar)
 	ed25519.X25519_ge_tobytes(&ctx.myMsg, &Pstar_proj)
-	copy(out, ctx.myMsg)
 	ctx.state = 1
 
-	return 1
+	return ctx.myMsg, nil
 }
 
 func updateWithLengthPrefix(sha hash.Hash, data []uint8) {
@@ -983,14 +978,14 @@ func updateWithLengthPrefix(sha hash.Hash, data []uint8) {
 	sha.Write(data)
 }
 
-func (ctx *Spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, theirMsg []uint8) (uint32, error) {
+func (ctx *Spake2Ctx) SPAKE2_process_msg(theirMsg []uint8) ([]byte, error) {
 	if ctx.state != 1 || len(theirMsg) != 32 { // Assuming 1 is spake2_state_msg_generated
-		return 0, errors.New("invalid state or message length")
+		return nil, errors.New("invalid state or message length")
 	}
 
 	var Qstar ed25519.Ge_p3
 	if ed25519.X25519_ge_frombytes_vartime(&Qstar, theirMsg) == 0 {
-		return 0, errors.New("point received from peer was not on the curve")
+		return nil, errors.New("point received from peer was not on the curve")
 	}
 
 	var peersMask ed25519.Ge_p3
@@ -1039,12 +1034,6 @@ func (ctx *Spake2Ctx) SPAKE2_process_msg(outKey []uint8, maxOutKeyLen uint32, th
 	updateWithLengthPrefix(hasher, ctx.passwordHash[:])
 
 	key := hasher.Sum(nil)
-	toCopy := maxOutKeyLen
-	if toCopy > uint32(len(key)) {
-		toCopy = uint32(len(key))
-	}
-	copy(outKey, key[:toCopy])
 	ctx.state = 2 // Assuming 2 is spake2_state_key_generated
-
-	return toCopy, nil
+	return key, nil
 }

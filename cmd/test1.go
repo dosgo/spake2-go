@@ -13,9 +13,6 @@ const (
 	kServerName = "adb pair server"
 )
 
-var SPAKE2_MAX_MSG_SIZE int = 32
-var SPAKE2_MAX_KEY_SIZE = 64
-
 var kPassword = []byte{
 	0x35, 0x39, 0x32, 0x37, 0x38, 0x31, 0xe6, 0x3d, 0xd9, 0x59, 0x65, 0x1c,
 	0x21, 0x16, 0x00, 0xf3, 0xb6, 0x56, 0x1d, 0x0b, 0x9d, 0x90, 0xaf, 0x09,
@@ -35,15 +32,12 @@ func main() {
 		log.Printf("Unable to create a SPAKE2 context.")
 		return
 	}
-	var aMessage = make([]byte, uint32(SPAKE2_MAX_MSG_SIZE))
 
-	var aMsgSize uint32 = uint32(SPAKE2_MAX_MSG_SIZE)
+	aMessage, err := alice.SPAKE2_generate_msg(kPassword)
 
-	status := alice.SPAKE2_generate_msg(aMessage, aMsgSize, kPassword)
+	log.Printf("ALICE ==>:%+v\r\n", aMessage)
 
-	log.Printf("ALICE(%d) ==>:%+v\r\n", aMsgSize, aMessage)
-
-	if status < 1 || aMsgSize == 0 {
+	if err != nil {
 		log.Printf("Unable to generate the SPAKE2 public key111.")
 		return
 	}
